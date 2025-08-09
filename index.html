@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>💈 Asistente Virtual - Peluquería Alejandro Luque</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f3f5f7; display: flex; flex-direction: column; align-items: center; margin: 0; }
+        h1 { color: #333; margin-top: 20px; }
+        #chat-container { width: 90%; max-width: 700px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px;}
+        #chat { height: 500px; padding: 15px; overflow-y: auto; }
+        .mensaje { margin: 10px 0; padding: 10px 15px; border-radius: 18px; max-width: 80%; line-height: 1.4; }
+        .bot { background: #e9e9eb; color: #000; float: left; clear: both; }
+        .usuario { background: #007bff; color: white; float: right; clear: both; }
+        #entrada-container { border-top: 1px solid #ddd; padding: 10px; }
+        #entrada { display: flex; }
+        #inputTexto { flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 18px; }
+        button { padding: 10px 20px; font-size: 16px; margin-left: 10px; background-color: #007bff; color: white; border: none; border-radius: 18px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>💈 Asistente Virtual - Peluquería Alejandro Luque</h1>
+    <div id="chat-container">
+        <div id="chat"></div>
+        <!-- LOS BOTONES HAN SIDO ELIMINADOS DE AQUÍ -->
+        <div id="entrada-container">
+            <div id="entrada">
+                <input type="text" id="inputTexto" placeholder="Escribe un mensaje...">
+                <button onclick="enviarMensajeDesdeInput()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chat = document.getElementById("chat");
+        const input = document.getElementById("inputTexto");
+        const user_id = 'session_' + Date.now();
+
+        function agregarMensaje(texto, clase) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "mensaje " + clase;
+            wrapper.innerHTML = texto.replace(/\n/g, '<br>');
+            chat.appendChild(wrapper);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function enviarMensaje(texto) {
+            if (!texto && texto !== "") return;
+            
+            if (texto !== "") {
+                agregarMensaje(texto, "usuario");
+            }
+            input.value = "";
+
+            try {
+                const response = await fetch("/mensaje", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mensaje: texto, user_id })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                agregarMensaje(data.respuesta, "bot");
+
+            } catch (error) {
+                console.error('Error en fetch:', error);
+                agregarMensaje("❌ Error al conectar con el servidor.", "bot");
+            }
+        }
+
+        function enviarMensajeDesdeInput() {
+            const texto = input.value.trim();
+            enviarMensaje(texto);
+        }
+
+        // Al cargar la página, enviamos un mensaje vacío para obtener el saludo inicial.
+        window.onload = () => {
+            enviarMensaje("");
+        };
+
+        input.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                enviarMensajeDesdeInput();
+            }
+        });
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,17 @@
+# Python / Virtualenv
+__pycache__/
+*.pyc
+env/
+.venv/
+
+# Archivos locales
+*.log
+flask_session/
+
+# Bases de datos locales
+*.sqlite3
+*.db
+
+# Configs sensibles (si los usas)
+.env
+.env.*
