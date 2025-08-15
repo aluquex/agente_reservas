@@ -26,9 +26,9 @@
     button:hover{ transform:translateY(-1px); background:linear-gradient(180deg, var(--gold-2), var(--gold-2)); border-color:var(--gold-2); box-shadow:0 8px 22px rgba(212,175,55,.25); }
     button:active{ transform:translateY(0); box-shadow:none; }
     .component-container { float: left; clear: both; width: 100%; margin: 10px 0; }
-    .day-selector, .hour-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
-    .day-button, .hour-button { background: #2a2a2a; border: 1px solid #444; color: #fff; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-family: inherit; font-size: 15px; }
-    .day-button:hover, .hour-button:hover { background: var(--gold); color: #000; }
+    .day-selector, .hour-selector, .choice-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
+    .day-button, .hour-button, .choice-button { background: #2a2a2a; border: 1px solid #444; color: #fff; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-family: inherit; font-size: 15px; }
+    .day-button:hover, .hour-button:hover, .choice-button:hover { background: var(--gold); color: #000; }
   </style>
 </head>
 <body>
@@ -55,27 +55,32 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    // --- FUNCIÓN DE DIBUJO DE COMPONENTES MEJORADA ---
     function dibujarComponente(componente) {
         const container = document.createElement("div");
         container.className = "component-container";
         
         let selectorDiv;
         if (componente.type === 'day_selector') {
-            selectorDiv = document.createElement("div");
-            selectorDiv.className = "day-selector";
+            selectorDiv = document.createElement("div"); selectorDiv.className = "day-selector";
             componente.days.forEach(item => {
-                const button = document.createElement("button");
-                button.className = "day-button";
+                const button = document.createElement("button"); button.className = "day-button";
                 button.textContent = item.display;
                 button.addEventListener("click", () => enviarMensaje(item.value));
                 selectorDiv.appendChild(button);
             });
         } else if (componente.type === 'hour_selector') {
-            selectorDiv = document.createElement("div");
-            selectorDiv.className = "hour-selector";
+            selectorDiv = document.createElement("div"); selectorDiv.className = "hour-selector";
             componente.hours.forEach(item => {
-                const button = document.createElement("button");
-                button.className = "hour-button";
+                const button = document.createElement("button"); button.className = "hour-button";
+                button.textContent = item;
+                button.addEventListener("click", () => enviarMensaje(item));
+                selectorDiv.appendChild(button);
+            });
+        } else if (componente.type === 'choice_buttons') { // <-- Nuevo tipo de componente
+            selectorDiv = document.createElement("div"); selectorDiv.className = "choice-selector";
+            componente.choices.forEach(item => {
+                const button = document.createElement("button"); button.className = "choice-button";
                 button.textContent = item;
                 button.addEventListener("click", () => enviarMensaje(item));
                 selectorDiv.appendChild(button);
@@ -90,6 +95,9 @@
     }
 
     async function enviarMensaje(textoUsuario) {
+      // Ocultamos la barra de texto mientras el bot responde para evitar envíos múltiples
+      document.getElementById('input-area').style.display = 'none';
+
       if (textoUsuario) {
         agregarMensaje(textoUsuario, "user");
       }
@@ -103,6 +111,7 @@
         });
         if (!respuesta.ok) throw new Error(`Error del servidor: ${respuesta.status}`);
         const datos = await respuesta.json();
+        
         if (datos && datos.respuesta) {
           agregarMensaje(datos.respuesta, "bot");
         }
@@ -111,12 +120,18 @@
         }
       } catch (error) {
         agregarMensaje("❌ Error de conexión.", "bot");
+      } finally {
+        // Volvemos a mostrar la barra de texto al final, pase lo que pase
+        document.getElementById('input-area').style.display = 'flex';
+        input.focus();
       }
     }
     
     function manejarEnvio() {
         const texto = input.value.trim();
-        if (texto) {
+        // Permitimos el envío de texto vacío solo si NO hay botones en pantalla
+        const hayBotones = chat.querySelector('button');
+        if (texto || !hayBotones) {
             enviarMensaje(texto);
             input.value = "";
             input.focus();
