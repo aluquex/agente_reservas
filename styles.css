@@ -1,0 +1,127 @@
+/* --- Variables de Color y Fuentes --- */
+:root {
+  --bg: #000000;
+  --text: #ffffff;
+  --muted: #d6d6d6;
+  --gold: #d4af37;
+  --gold-2: #b9931a;
+  --card: #0f0f0f;
+  --ring: rgba(212, 175, 55, .35);
+  font-family: "Cormorant Garamond", ui-serif, Georgia, "Times New Roman", serif;
+}
+
+/* --- Reseteo y Estilos Base --- */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+/* --- Contenedor Principal y Encabezado --- */
+.container {
+  max-width: 1100px;
+  width: 100%;
+  text-align: center;
+}
+
+.header .brand {
+  color: var(--gold);
+  letter-spacing: .4px;
+  font-weight: 600;
+  font-size: clamp(14px, 1.6vw, 16px);
+  opacity: .95;
+  margin-bottom: 16px;
+}
+
+.header h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.header p {
+  font-size: 1.125rem;
+  color: var(--muted);
+  max-width: 600px;
+  margin: 0 auto 48px;
+}
+
+/* --- Sección de Tarjetas --- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid #222;
+  border-radius: 12px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all .2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 20px 0 var(--ring);
+}
+
+.card .icon {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+}
+
+.card h3 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+
+.card p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+/* --- Botón/Enlace de Acción (CTA) --- */
+.cta {
+  background-color: var(--gold);
+  color: #000;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  display: inline-block;
+  transition: background-color .2s;
+  margin-top: auto;
+}
+
+.cta:hover {
+  background-color: var(--gold-2);
+}
+
+/* --- Nota al pie --- */
+.note {
+  font-size: 0.9rem;
+  color: #777;
+}
+
+.note b {
+    color: #999;
+}

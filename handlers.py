@@ -1,190 +1,167 @@
-# handlers.py — versión multi-negocio
-from flask import jsonify, session
+# handlers.py
+from flask import session
+from datetime import timedelta, datetime
 import utils
-import config
 import database
 
-# Config temporal: negocio fijo
-NEGOCIO_ID = 1
+HORAS_JORNADA = ["10:00", "11:00", "12:00", "13:00", "16:00", "17:00", "18:00", "19:00"]
 
-# --- MANEJADORES DE CITA NUEVA ---
+def _get_negocio_id():
+    return session.get('negocio_id', 1)
 
-def handle_bienvenida(texto_usuario):
-    session.clear()
-    session['estado'] = 'pidiendo_nombre'
-    return jsonify({"respuesta": "¡Hola! Bienvenido a la peluquería Alejandro Luque. ¿cómo te llamas?"})
+# --- FLUJO DE NUEVA RESERVA ---
+def handle_bienvenida(_texto_usuario):
+    session.clear(); session['negocio_id'] = 1; session['estado'] = 'pidiendo_nombre'
+    return {"respuesta": "¡Buenas! Bienvenido a Peluquería Sialweb. Para empezar, ¿cómo te llamas?"}
 
 def handle_peticion_nombre(texto_usuario):
-    if not utils.validar_nombre(texto_usuario):
-        return jsonify({"respuesta": "Por favor, introduce un nombre válido."})
-    session['nombre'] = texto_usuario.title()
-    session['estado'] = 'pidiendo_telefono'
-    servicios_str = "\n".join([f"💈 {s}" for s in config.SERVICIOS])
-    return jsonify({"respuesta": f"Encantado, {session['nombre']}. ¿Cuál es tu número de teléfono?"})
+    session['nombre'] = texto_usuario.strip().title(); session['estado'] = 'pidiendo_telefono'
+    return {"respuesta": f"¡Genial, {session['nombre']}! Ahora dime tu número de móvil."}
 
 def handle_peticion_telefono(texto_usuario):
-    telefono = texto_usuario.replace(" ", "")
-    if not utils.validar_telefono(telefono):
-        return jsonify({"respuesta": "Introduce un teléfono válido de 9 dígitos."})
-    session['telefono'] = telefono
+    telefono = texto_usuario.strip(); session['telefono'] = telefono
+    if database.tiene_cita_futura(telefono, negocio_id=_get_negocio_id()):
+        session.clear(); return { "respuesta": "¡Ojo! Ya tienes una cita pendiente. Si quieres gestionarla, dímelo." }
+    mensaje_inicial = "¡Recibido! Estos son nuestros servicios:"
+    pregunta_final = "\n\n¿Qué te vas a hacer hoy?"
+    citas_pasadas = database.obtener_citas_pasadas(telefono, negocio_id=_get_negocio_id())
+    if citas_pasadas:
+        ultima_cita = citas_pasadas[0]; fecha_legible = ultima_cita['fecha'].strftime('%d de %B')
+        saludo_recurrente = (f"¡Qué bueno verte de nuevo, {session['nombre']}! Tu última visita fue el {fecha_legible} para un '{ultima_cita['servicio_nombre']}'.")
+        mensaje_inicial = f"{saludo_recurrente}\n\n¿Qué te vas a hacer hoy? Nuestros servicios son:"
+        pregunta_final = ""
     session['estado'] = 'pidiendo_servicio'
-    servicios_str = "\n".join([f"💈 {s}" for s in config.SERVICIOS])
-    return jsonify({"respuesta": f"Perfecto. Nuestros servicios:\n{servicios_str}\n¿Cuál deseas?"})
+    servicios_db = database.listar_servicios(negocio_id=_get_negocio_id())
+    nombres_servicios = [s['nombre'] for s in servicios_db]
+    session['nombres_servicios_disponibles'] = nombres_servicios
+    lista_servicios_str = ""
+    for servicio in servicios_db: lista_servicios_str += f"\n› {servicio['nombre']} — {servicio['precio']}€"
+    respuesta_completa = f"{mensaje_inicial}{lista_servicios_str}{pregunta_final}"
+    return {"respuesta": respuesta_completa}
 
 def handle_peticion_servicio(texto_usuario):
-    servicio_elegido = utils.encontrar_servicio_mas_cercano(texto_usuario)
-    if not servicio_elegido:
-        return jsonify({"respuesta": "No he reconocido ese servicio. Elige uno de la lista."})
-    
-    session['servicio'] = servicio_elegido
-    
-    if session.get('modificando_cita_id'):
-        return confirmar_modificacion()
-
-    session['estado'] = 'pidiendo_fecha'
-    mensaje = (f"Has elegido '{servicio_elegido}'.\n"
-               f"{utils.generar_listado_disponibilidad_completo()}\n\n"
-               "Dime qué día te viene bien (p. ej., 'el jueves').")
-    return jsonify({"respuesta": mensaje})
-
-def handle_peticion_fecha(texto_usuario):
-    fecha_obj = utils.detectar_fecha(texto_usuario)
-    if not fecha_obj:
-        return jsonify({"respuesta": "No he entendido la fecha. Inténtalo de nuevo."})
-    if fecha_obj.weekday() >= 5 or fecha_obj.date() < utils.datetime.now().date():
-        return jsonify({"respuesta": "Fecha no válida. Elige un día laborable futuro."})
-        
-    session['fecha'] = utils.formato_fecha(fecha_obj)
-    
-    if session.get('modificando_cita_id'):
-        return confirmar_modificacion()
-
-    session['estado'] = 'pidiendo_hora'
-    return jsonify({"respuesta": utils.generar_mensaje_disponibilidad_para_fecha(fecha_obj)})
+    if session.get('modificando_cita'): return handle_modificar_servicio(texto_usuario)
+    nombres_servicios = session.get('nombres_servicios_disponibles', [])
+    servicio_elegido = utils.encontrar_servicio_mas_cercano(texto_usuario, nombres_servicios)
+    if not servicio_elegido: return {"respuesta": "No he entendido. Elige uno de los servicios."}
+    session['servicio'] = servicio_elegido; session['estado'] = 'pidiendo_hora'
+    return _mostrar_calendario()
 
 def handle_peticion_hora(texto_usuario):
-    hora_elegida = utils.extraer_hora(texto_usuario)
-    if not hora_elegida or hora_elegida not in config.HORAS_DISPONIBLES:
-        return jsonify({"respuesta": "Hora no válida. Elige una de las propuestas."})
+    if session.get('modificando_cita'): return handle_modificar_fecha_hora(texto_usuario)
+    return _mostrar_horas_para_fecha(texto_usuario)
 
-    if database.cita_ya_existe(session['fecha'], hora_elegida, negocio_id=NEGOCIO_ID):
-        return jsonify({"respuesta": f"La hora {hora_elegida} ya está ocupada. Elige otra."})
+def handle_confirmar_cita(texto_usuario):
+    session['hora'] = texto_usuario.strip()
+    try:
+        datos_para_guardar = { "nombre": session.get('nombre'), "telefono": session.get('telefono'), "servicio": session.get('servicio'), "fecha": session.get('fecha'), "hora": session.get('hora') }
+        database.guardar_reserva(datos_para_guardar, negocio_id=_get_negocio_id())
+    except Exception as e:
+        print(f"!!! ERROR al guardar: {e}"); return {"respuesta": "¡Uy! Ha ocurrido un error al confirmar tu cita."}
+    nombre_usuario = session.get('nombre', 'Cliente'); fecha_legible = datetime.strptime(session.get('fecha'), '%Y-%m-%d').strftime('%d/%m/%Y')
+    respuesta_final = ( f"¡Tachán! Cita confirmada, {nombre_usuario}.\n\n" f"**Resumen:**\n" f"› Servicio: {session.get('servicio')}\n" f"› Día: {fecha_legible}\n" f"› Hora: {session.get('hora')}\n\n" "¡Gracias! Te esperamos." )
+    session.clear(); return {"respuesta": respuesta_final}
 
-    session['hora'] = hora_elegida
-    
-    if session.get('modificando_cita_id'):
-        return confirmar_modificacion()
-
-    nueva_reserva = {
-        "nombre": session['nombre'],
-        "telefono": session['telefono'],
-        "servicio": session['servicio'],
-        "fecha": session['fecha'],
-        "hora": session['hora']
-    }
-    database.anadir_reserva(nueva_reserva, negocio_id=NEGOCIO_ID)
-    respuesta = (f"✅ ¡Todo listo, {session['nombre']}! Tu cita está confirmada:\n\n"
-                 f"📅 Fecha: {session['fecha']}\n"
-                 f"⏰ Hora: {session['hora']}\n"
-                 f"💈 Servicio: {session['servicio']}\n\n¡Nos vemos!")
-    session.clear()
-    return jsonify({"respuesta": respuesta})
-
-# --- MANEJADORES DE GESTIÓN (CONSULTA, CANCELACIÓN, MODIFICACIÓN) ---
-
+# --- FLUJO DE GESTIÓN ---
 def handle_inicio_gestion(texto_usuario):
-    session.clear()
+    session.clear(); session['negocio_id'] = 1
     texto_norm = utils.normalizar_texto(texto_usuario)
-    
-    if "consultar" in texto_norm: session['accion'] = 'consultar'
-    elif "cancelar" in texto_norm: session['accion'] = 'cancelar'
-    elif "modificar" in texto_norm: session['accion'] = 'modificar'
-    
+    if 'cancelar' in texto_norm or 'anular' in texto_norm: session['accion_gestion'] = 'cancelar'
+    elif 'modificar' in texto_norm or 'cambiar' in texto_norm: session['accion_gestion'] = 'modificar'
+    else: session['accion_gestion'] = 'consultar'
     session['estado'] = 'gestion_pide_telefono'
-    return jsonify({"respuesta": "Entendido. Para continuar, introduce tu número de teléfono."})
+    return {"respuesta": "¡Claro! Para encontrar tu cita, dime tu número de teléfono."}
 
 def handle_gestion_pide_telefono(texto_usuario):
-    telefono = texto_usuario.replace(" ", "")
-    if not utils.validar_telefono(telefono):
-        return jsonify({"respuesta": "Número no válido. Introduce un teléfono de 9 dígitos."})
-    
-    citas = database.get_citas_por_telefono(telefono, negocio_id=NEGOCIO_ID)
-    if not citas:
-        session.clear()
-        return jsonify({"respuesta": "No he encontrado ninguna cita con ese número."})
-
-    cita = citas[0]
-    
-    if session['accion'] == 'consultar':
-        respuesta = f"He encontrado tu cita:\n\n📅 Fecha: {cita['fecha']}\n⏰ Hora: {cita['hora']}\n💈 Servicio: {cita['servicio']}"
-        session.clear()
-        return jsonify({"respuesta": respuesta})
-        
-    elif session['accion'] == 'cancelar':
-        session['cita_gestionada_id'] = cita['id']
+    telefono = texto_usuario.strip()
+    citas_futuras = database.obtener_citas_futuras_por_telefono(telefono, negocio_id=_get_negocio_id())
+    if not citas_futuras:
+        session.clear(); return {"respuesta": "No he encontrado ninguna cita pendiente con ese teléfono."}
+    cita = citas_futuras[0]
+    cita_serializable = { "id": cita['id'], "fecha": cita['fecha'].strftime('%Y-%m-%d'), "hora": cita['hora'].strftime('%H:%M'), "servicio_nombre": cita['servicio_nombre'] }
+    session['cita_a_gestionar'] = cita_serializable
+    fecha_legible = cita['fecha'].strftime('%A, %d de %B'); hora_legible = cita['hora'].strftime('%H:%M')
+    mensaje_intro = f"He encontrado tu cita para un **'{cita['servicio_nombre']}'** el **{fecha_legible} a las {hora_legible}**."
+    if session.get('accion_gestion') == 'consultar':
+        session.clear(); return { "respuesta": mensaje_intro }
+    if session.get('accion_gestion') == 'cancelar':
         session['estado'] = 'gestion_confirmar_cancelacion'
-        return jsonify({"respuesta": f"He encontrado esta cita:\n\n📅 {cita['fecha']} a las {cita['hora']}\n\n¿Seguro que quieres cancelarla? (sí/no)"})
-        
-    elif session['accion'] =="modificar":
-        session['modificando_cita_id'] = cita['id']
-        session['servicio'] = cita['servicio']
-        session['fecha'] = cita['fecha']
-        session['hora'] = cita['hora']
-        session['estado'] = 'modificar_pide_campo'
-        return jsonify({"respuesta": f"Ok. Tu cita actual es:\n📅 {cita['fecha']} a las {cita['hora']} para un '{cita['servicio']}'.\n\n¿Qué quieres modificar: el servicio, la fecha o la hora?"})
+        return { "respuesta": f"{mensaje_intro}\n\n¿Estás seguro de que quieres cancelarla? (sí/no)" }
+    if session.get('accion_gestion') == 'modificar':
+        session['estado'] = 'gestion_pide_campo_a_modificar'
+        return { "respuesta": f"{mensaje_intro}\n\n¿Qué te gustaría cambiar: el **servicio** o el **día/hora**?" }
 
 def handle_gestion_confirmar_cancelacion(texto_usuario):
-    texto_norm = utils.normalizar_texto(texto_usuario)
-    if texto_norm in ['si', 'sip', 'confirmo', 'cancelar']:
-        database.cancelar_cita(session['cita_gestionada_id'], negocio_id=NEGOCIO_ID)
-        session.clear()
-        return jsonify({"respuesta": "Gracias, la cita ha sido cancelada con éxito. Hasta la próxima"})
-    elif texto_norm in ['no', 'nop', 'no cancelar']:
-        session.clear()
-        return jsonify({"respuesta": "De acuerdo, no he cancelado tu cita."})
-    else:
-        return jsonify({"respuesta": "Responde 'sí' para cancelar o 'no' para mantener la cita."})
+    respuesta_norm = utils.normalizar_texto(texto_usuario)
+    if respuesta_norm in ['si', 's', 'sip', 'confirmo', 'cancelala']:
+        cita_a_cancelar = session.get('cita_a_gestionar')
+        if cita_a_cancelar:
+            database.cancelar_cita(cita_a_cancelar['id'], negocio_id=_get_negocio_id()); session.clear()
+            return {"respuesta": "¡Hecho! Tu cita ha sido cancelada."}
+    elif respuesta_norm in ['no', 'n', 'nop', 'no cancelar']:
+        session.clear(); return {"respuesta": "De acuerdo. No he cancelado tu cita."}
+    else: return {"respuesta": "No te he entendido. Responde 'sí' para confirmar o 'no'."}
 
-# --- NUEVOS MANEJADORES PARA MODIFICACIÓN ---
-
-def handle_modificar_pide_campo(texto_usuario):
+def handle_gestion_pide_campo_a_modificar(texto_usuario):
     texto_norm = utils.normalizar_texto(texto_usuario)
+    session['modificando_cita'] = True
     if 'servicio' in texto_norm:
         session['estado'] = 'pidiendo_servicio'
-        servicios_str = "\n".join([f"💈 {s}" for s in config.SERVICIOS])
-        return jsonify({"respuesta": f"Ok, elige el nuevo servicio:\n{servicios_str}"})
-    elif 'fecha' in texto_norm:
-        session['estado'] = 'pidiendo_fecha'
-        mensaje = (f"{utils.generar_listado_disponibilidad_completo()}\n\n"
-                   "Elige una nueva fecha.")
-        return jsonify({"respuesta": mensaje})
-    elif 'hora' in texto_norm:
+        servicios_db = database.listar_servicios(negocio_id=_get_negocio_id())
+        nombres_servicios = [s['nombre'] for s in servicios_db]
+        session['nombres_servicios_disponibles'] = nombres_servicios
+        lista_servicios_str = ""
+        for s in servicios_db: lista_servicios_str += f"\n› {s['nombre']} — {s['precio']}€"
+        return {"respuesta": f"Entendido. ¿Por cuál de estos servicios quieres cambiarla?{lista_servicios_str}"}
+    elif 'dia' in texto_norm or 'hora' in texto_norm or 'fecha' in texto_norm:
         session['estado'] = 'pidiendo_hora'
-        fecha_obj = utils.datetime.strptime(session['fecha'], '%d/%m/%Y')
-        return jsonify({"respuesta": utils.generar_mensaje_disponibilidad_para_fecha(fecha_obj)})
-    else:
-        return jsonify({"respuesta": "Por favor, dime si quieres cambiar 'servicio', 'fecha' u 'hora'."})
+        return _mostrar_calendario()
+    else: return {"respuesta": "No te he entendido. Dime si quieres cambiar el **servicio** o el **día/hora**."}
 
-def confirmar_modificacion():
-    datos_nuevos = {
-        'servicio': session['servicio'],
-        'fecha': session['fecha'],
-        'hora': session['hora']
-    }
-    id_cita = session['modificando_cita_id']
-    
-    database.actualizar_cita(id_cita, datos_nuevos, negocio_id=NEGOCIO_ID)
-    
-    cita_actualizada = database.get_cita_por_id(id_cita, negocio_id=NEGOCIO_ID)
-    
-    respuesta = (f"GRACIAS, SU CITA HA SIDO MODIFICADA.\n\n"
-                 f"Aquí tienes los nuevos datos:\n"
-                 f"📅 Fecha: {cita_actualizada['fecha']}\n"
-                 f"⏰ Hora: {cita_actualizada['hora']}\n"
-                 f"💈 Servicio: {cita_actualizada['servicio']}")
-                 
+# --- FUNCIONES AUXILIARES Y DE MODIFICACIÓN ---
+def _mostrar_calendario():
+    dias_disponibles = []; hoy = utils.now_spain().date(); dia_actual = hoy
+    while dia_actual.month == hoy.month:
+        if dia_actual.weekday() >= 5: dia_actual += timedelta(days=1); continue
+        dias_disponibles.append({ "display": f"{utils.formato_nombre_dia_es(dia_actual)} {dia_actual.strftime('%d/%m')}", "value": dia_actual.strftime('%Y-%m-%d') })
+        dia_actual += timedelta(days=1)
+    return { "respuesta": "De acuerdo, elige un nuevo día del calendario:", "ui_component": { "type": "day_selector", "days": dias_disponibles } }
+
+def _mostrar_horas_para_fecha(fecha_str):
+    try:
+        fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        session['fecha'] = fecha_str
+        horas_ocupadas = database.obtener_horas_ocupadas(fecha_str, negocio_id=_get_negocio_id())
+        ahora = utils.now_spain(); horas_libres = []
+        for hora_str in HORAS_JORNADA:
+            if hora_str in horas_ocupadas: continue
+            hora_cita = int(hora_str.split(":")[0])
+            if fecha_obj == ahora.date() and hora_cita <= ahora.hour: continue
+            horas_libres.append(hora_str)
+        if session.get('modificando_cita'): session['estado'] = 'modificar_confirmar_hora'
+        else: session['estado'] = 'confirmar_cita'
+        if not horas_libres: return {"respuesta": f"Vaya, para el día {fecha_obj.strftime('%d/%m')} no quedan huecos."}
+        return { "respuesta": f"Estupendo. Para el día {fecha_obj.strftime('%d/%m')} tengo hueco en estas horas:", "ui_component": { "type": "hour_selector", "hours": horas_libres } }
+    except ValueError:
+        return {"respuesta": "No he entendido la fecha que has seleccionado."}
+
+def handle_modificar_servicio(texto_usuario):
+    nombres_servicios = session.get('nombres_servicios_disponibles', [])
+    nuevo_servicio = utils.encontrar_servicio_mas_cercano(texto_usuario, nombres_servicios)
+    if not nuevo_servicio: return {"respuesta": "No he reconocido ese servicio. Elige uno de la lista."}
+    cita_id = session['cita_a_gestionar']['id']
+    database.modificar_cita(cita_id, _get_negocio_id(), {'servicio': nuevo_servicio})
     session.clear()
-    return jsonify({"respuesta": respuesta})
+    return {"respuesta": f"¡Listo! He cambiado el servicio de tu cita a **'{nuevo_servicio}'**. El día y la hora se mantienen."}
 
-def handle_fallback(texto_usuario):
-    return jsonify({"respuesta": "Lo siento, no he entendido. Puedes pedir 'nueva cita', 'consultar', 'modificar' o 'cancelar'."})
+def handle_modificar_fecha_hora(texto_usuario):
+    return _mostrar_horas_para_fecha(texto_usuario)
+
+def handle_modificar_confirmar_hora(texto_usuario):
+    hora_elegida = texto_usuario.strip()
+    cita_id = session['cita_a_gestionar']['id']
+    nuevos_datos = { 'fecha': session.get('fecha'), 'hora': hora_elegida }
+    database.modificar_cita(cita_id, _get_negocio_id(), nuevos_datos)
+    session.clear()
+    fecha_legible = datetime.strptime(nuevos_datos['fecha'], '%Y-%m-%d').strftime('%d/%m/%Y')
+    return {"respuesta": f"¡Cita actualizada! Tu nueva cita es el **{fecha_legible} a las {hora_elegida}**."}

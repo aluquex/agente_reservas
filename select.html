@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>💈 Demo — Asistente para Peluquerías & Barberías</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#000; --card:#0f0f0f; --text:#fff; --muted:#cfcfcf;
+      --gold:#d4af37; --gold-2:#b9931a; --ring:rgba(212,175,55,.35);
+      --ok:#17c964;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;background:var(--bg);color:var(--text);
+      font-family:"Cormorant Garamond",ui-serif,Georgia,"Times New Roman",serif;
+      display:flex;flex-direction:column;align-items:center;min-height:100svh;
+    }
+
+    /* Fallback container centered */
+    header{
+      width:100%;display:flex;justify-content:center;align-items:center;padding:20px 16px;
+      animation:fadeIn .8s ease both;
+    }
+    h1{
+      margin:0;font-size:clamp(22px,3.4vw,36px);font-weight:700;letter-spacing:.2px;
+      display:flex;gap:10px;align-items:center;text-align:center;
+    }
+    h1::before{content:"💈";filter:drop-shadow(0 0 6px var(--ring))}
+
+    /* Cards */
+    .card{
+      background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:24px;
+      box-shadow:0 10px 28px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06) inset;
+      width:min(800px,92vw); margin:14px auto; animation:fadeIn .9s ease .05s both;
+    }
+    .badge{
+      display:inline-block;background:rgba(212,175,55,.12);border:1px solid var(--gold);color:var(--gold);
+      padding:6px 10px;border-radius:999px;font-weight:600;font-size:13px;margin-bottom:10px
+    }
+    .title{font-size:clamp(22px,2.6vw,32px);margin:0 0 10px;text-align:center;}
+    .subtitle{font-size:clamp(15px,2vw,18px);color:var(--muted);margin:0 0 18px;line-height:1.55;text-align:center;}
+    ul{margin:0 0 18px 18px;padding:0;color:var(--muted)}
+    li{margin:.45rem 0} li::marker{color:var(--ok)}
+
+    .cta{display:flex;justify-content:center;margin-top:14px}
+
+    /* Primary button with hover effect */
+    .btn{
+      padding:12px 18px;border-radius:16px;border:1px solid var(--gold);
+      background:linear-gradient(180deg,var(--gold),var(--gold)); color:#161616;
+      font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;
+      transition:transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, filter .15s ease;
+      box-shadow:0 8px 22px rgba(212,175,55,.15);
+    }
+    .btn:hover{
+      transform:translateY(-2px) scale(1.02);
+      background:linear-gradient(180deg,var(--gold-2),var(--gold-2));
+      border-color:var(--gold-2);
+      box-shadow:0 12px 28px rgba(212,175,55,.28);
+      filter:brightness(1.02);
+    }
+    .btn:active{transform:translateY(0) scale(1.0);box-shadow:0 8px 22px rgba(212,175,55,.18)}
+
+    /* Comparativa */
+    .block-title{margin:0 0 8px;text-align:center;font-size:clamp(20px,2.4vw,28px)}
+    .block-sub{color:var(--muted);text-align:center;margin:0 0 14px;font-size:clamp(14px,1.9vw,18px)}
+    .table-wrap{
+      width:100%; overflow:auto; border:1px solid rgba(255,255,255,.08);
+      border-radius:12px; /* corner rounding keeps on overflow with wrapper */
+    }
+    table{
+      width:100%; border-collapse:collapse; min-width:540px; /* scrolls on very small screens */
+      background:#111;
+    }
+    th,td{padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left}
+    th{background:#121212;color:#eaeaea; position:sticky; top:0}
+    tr:last-child td{border-bottom:none}
+    .save{color:#17c964; font-weight:700}
+    .note{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
+
+    footer{
+      width:100%;display:flex;justify-content:center;align-items:center;
+      padding:24px 12px;margin-top:6px; animation:fadeIn .9s ease .08s both;
+    }
+    .foot{
+      text-align:center; max-width:1100px; width:100%; color:#e6e6e6;
+      font-size:clamp(14px,1.8vw,18px); opacity:.92;
+    }
+
+    /* Fade-in */
+    @keyframes fadeIn{
+      from{opacity:0; transform:translateY(14px)}
+      to{opacity:1; transform:translateY(0)}
+    }
+
+    /* Mobile tweaks */
+    @media (max-width:560px){
+      .card{padding:18px}
+      ul{margin-left:16px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Asistente Virtual — Peluquerías & Barberías</h1>
+  </header>
+
+  <!-- Hero / Intro -->
+  <section class="card" role="region" aria-label="Introducción">
+    <span class="badge">Demo interactiva</span>
+    <h2 class="title">Convierte visitas de Instagram en <u>citas confirmadas</u></h2>
+    <p class="subtitle">
+      Tu asistente 24/7. Sin apps externas: funciona en
+      <strong>Instagram, WhatsApp y tu web</strong>. Es <strong>tuyo</strong>, 100% personalizado y sin cuotas mensuales.
+    </p>
+
+    <ul>
+      <li>✅ <strong>Sin apps</strong>: el cliente no descarga nada; reserva en segundos.</li>
+      <li>✅ <strong>Integrado en tu</strong>: IG, WhatsApp o web con tu branding.</li>
+      <li>✅ <strong>Bloqueo de citas duplicadas</strong> por teléfono.</li>
+      <li>✅ <strong>Recordatorios por email</strong> y calendario.</li>
+      <li>✅ <strong>Historial de clientes</strong> para trato cercano.</li>
+    </ul>
+
+    <div class="cta">
+      <a class="btn" id="cta-demo" href="index.html?business=hair_salon">Probar el asistente ahora →</a>
+    </div>
+  </section>
+
+  <!-- Comparativa -->
+  <section class="card" id="comparativa" role="region" aria-label="Comparativa de costes">
+    <h3 class="block-title">💸 Ahorro Real frente a Booksy</h3>
+    <p class="block-sub">Modelo simple: <strong>199 € pago único</strong> + <strong>100 € de renovación anual</strong>. Sin cuotas mensuales.</p>
+
+    <div class="table-wrap">
+      <table aria-label="Tabla comparativa de costes">
+        <thead>
+          <tr><th></th><th>Chatbot Sialweb</th><th>Booksy</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Precio inicial</strong></td><td>199 € (pago único)</td><td>0 €</td></tr>
+          <tr><td><strong>Cuota mensual</strong></td><td><strong>0 €/mes</strong></td><td>34,99 €/mes</td></tr>
+          <tr><td><strong>Renovación anual</strong></td><td>100 € / año</td><td>—</td></tr>
+          <tr><td><strong>Coste 1er año</strong></td><td><strong>299 €</strong></td><td>419,88 €</td></tr>
+          <tr><td><strong>Ahorro 1er año</strong></td><td class="save">💰 120,88 € menos</td><td>—</td></tr>
+          <tr><td><strong>Coste 2º año</strong></td><td><strong>100 €</strong></td><td>419,88 €</td></tr>
+          <tr><td><strong>Ahorro 2º año</strong></td><td class="save">💰 319,88 € menos</td><td>—</td></tr>
+          <tr><td><strong>Coste 3 años</strong></td><td><strong>399 €</strong> (total)</td><td>1.259,64 €</td></tr>
+          <tr><td><strong>Ahorro total 3 años</strong></td><td class="save">💰 860,64 € menos</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">*Cálculos con 34,99 €/mes en Booksy (12 meses = 419,88 €/año).</div>
+  </section>
+
+  <footer>
+    <div class="foot">© SialWeb — Integra tu asistente en Instagram, WhatsApp o tu web y convierte visitas en reservas.</div>
+  </footer>
+
+  <script>
+    // Garantiza el parámetro de negocio en el CTA
+    const withBiz = (url) => url.includes('business=') ? url : (url + (url.includes('?')?'&':'?') + 'business=hair_salon');
+    const cta = document.getElementById('cta-demo');
+    cta.href = withBiz(cta.href);
+
+    // Guarda el sector (por si lo lees desde el chat)
+    sessionStorage.setItem('business', 'hair_salon');
+  </script>
+</body>
+</html>
+
+

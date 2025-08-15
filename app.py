@@ -1,49 +1,49 @@
 # app.py
-from flask import Flask, request, jsonify, session, send_from_directory
+from flask import Flask, request, jsonify, session
+from flask_cors import CORS
+import config
 import handlers
-import utils
 
 app = Flask(__name__)
-app.secret_key = 'clave-secreta-para-probar-12345'
-app.config['PERMANENT_SESSION_LIFETIME'] = utils.timedelta(minutes=30)
+app.secret_key = config.SECRET_KEY
 
+CORS(
+    app,
+    resources={r"/mensaje": {"origins": list(config.CORS_ALLOWED_ORIGINS)}},
+    supports_credentials=True
+)
+
+GESTION_KEYWORDS = ['consultar', 'modificar', 'cambiar', 'cancelar', 'anular', 'ver mi cita']
+
+# El director de orquesta final y completo
 ESTADO_HANDLERS = {
     'pidiendo_nombre': handlers.handle_peticion_nombre,
     'pidiendo_telefono': handlers.handle_peticion_telefono,
     'pidiendo_servicio': handlers.handle_peticion_servicio,
-    'pidiendo_fecha': handlers.handle_peticion_fecha,
     'pidiendo_hora': handlers.handle_peticion_hora,
+    'confirmar_cita': handlers.handle_confirmar_cita,
     'gestion_pide_telefono': handlers.handle_gestion_pide_telefono,
     'gestion_confirmar_cancelacion': handlers.handle_gestion_confirmar_cancelacion,
-    # Estados para el nuevo flujo de modificación
-    'modificar_pide_campo': handlers.handle_modificar_pide_campo,
+    'gestion_pide_campo_a_modificar': handlers.handle_gestion_pide_campo_a_modificar,
+    'modificar_confirmar_hora': handlers.handle_modificar_confirmar_hora,
 }
 
 @app.route("/mensaje", methods=["POST"])
 def mensaje():
-    data = request.get_json()
-    texto_usuario = data.get("mensaje", "").strip()
-    
+    texto_usuario = request.json.get("mensaje", "").strip()
     estado_actual = session.get('estado')
-    texto_norm = utils.normalizar_texto(texto_usuario)
     
-    if any(keyword in texto_norm for keyword in ["consultar", "modificar", "cancelar"]):
-        return handlers.handle_inicio_gestion(texto_usuario)
-
-    if estado_actual:
+    # La lógica de enrutamiento simplificada y robusta
+    if any(keyword in texto_usuario.lower() for keyword in GESTION_KEYWORDS) and estado_actual not in ['gestion_pide_telefono', 'gestion_confirmar_cancelacion', 'gestion_pide_campo_a_modificar']:
+        respuesta_dict = handlers.handle_inicio_gestion(texto_usuario)
+    else:
         handler_func = ESTADO_HANDLERS.get(estado_actual)
         if handler_func:
-            return handler_func(texto_usuario)
+            respuesta_dict = handler_func(texto_usuario)
         else:
-            session.clear()
-            return handlers.handle_fallback(texto_usuario)
-    
-    return handlers.handle_bienvenida(texto_usuario)
-
-@app.route("/")
-def home():
-    return send_from_directory(".", "index.html")
+            respuesta_dict = handlers.handle_bienvenida(texto_usuario)
+        
+    return jsonify(respuesta_dict)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
-
+    app.run(host="0.0.0.0", port=config.FLASK_PORT, debug=True)

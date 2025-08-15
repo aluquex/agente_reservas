@@ -1,94 +1,137 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>💈 Asistente Virtual - Peluquería Alejandro Luque</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f3f5f7; display: flex; flex-direction: column; align-items: center; margin: 0; }
-        h1 { color: #333; margin-top: 20px; }
-        #chat-container { width: 90%; max-width: 700px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px;}
-        #chat { height: 500px; padding: 15px; overflow-y: auto; }
-        .mensaje { margin: 10px 0; padding: 10px 15px; border-radius: 18px; max-width: 80%; line-height: 1.4; }
-        .bot { background: #e9e9eb; color: #000; float: left; clear: both; }
-        .usuario { background: #007bff; color: white; float: right; clear: both; }
-        #entrada-container { border-top: 1px solid #ddd; padding: 10px; }
-        #entrada { display: flex; }
-        #inputTexto { flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 18px; }
-        button { padding: 10px 20px; font-size: 16px; margin-left: 10px; background-color: #007bff; color: white; border: none; border-radius: 18px; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>💈 Asistente Virtual — Peluquería Sialweb</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#000; --text:#fff; --muted:#d6d6d6; --gold:#d4af37; --gold-2:#b9931a;
+      --card:#0f0f0f; --bubble:#1a1a1a; --bubble-user:#1e2a39; --ring:rgba(212,175,55,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0;background:var(--bg);color:var(--text);font-family:"Cormorant Garamond", ui-serif, Georgia, "Times New Roman", serif;display:flex;align-items:center;justify-content:center;padding:24px; }
+    #chat-wrap{ width:min(780px, 92vw);background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06) inset;overflow:hidden; }
+    #chat-head{ padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));font-weight:600; letter-spacing:.2px;color:var(--gold); }
+    #chat{ height:min(60vh, 560px);min-height:360px; padding:16px; overflow-y:auto; scroll-behavior:smooth; }
+    .msg{margin:10px 0; padding:10px 14px; border-radius:18px; max-width:85%; line-height:1.45; border:1px solid transparent; white-space: pre-wrap;}
+    .bot{background:var(--bubble); color:var(--text); float:left; clear:both; border-color:rgba(255,255,255,.08); box-shadow:0 6px 18px rgba(0,0,0,.35)}
+    .user{background:var(--bubble-user); color:var(--text); float:right; clear:both; border-color:rgba(15,76,129,.25); box-shadow:0 6px 18px rgba(0,0,0,.35)}
+    #input-area{display:flex; gap:10px; padding:12px; border-top:1px solid rgba(255,255,255,.08); background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01))}
+    #inputTexto{flex:1; padding:12px 14px; font-size:16px; color:var(--text); background:#0e0e0e; border:1px solid rgba(255,255,255,.14); border-radius:18px; outline:none; transition:box-shadow .15s, border-color .15s}
+    #inputTexto:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--ring)}
+    button{ padding:12px 18px; font-size:16px; font-weight:600; color:#151515; background:linear-gradient(180deg, var(--gold), var(--gold)); border:1px solid var(--gold); border-radius:18px; cursor:pointer; transition:transform .15s, box-shadow .15s, background .15s, border-color .15s; }
+    button:hover{ transform:translateY(-1px); background:linear-gradient(180deg, var(--gold-2), var(--gold-2)); border-color:var(--gold-2); box-shadow:0 8px 22px rgba(212,175,55,.25); }
+    button:active{ transform:translateY(0); box-shadow:none; }
+    .component-container { float: left; clear: both; width: 100%; margin: 10px 0; }
+    .day-selector, .hour-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
+    .day-button, .hour-button { background: #2a2a2a; border: 1px solid #444; color: #fff; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-family: inherit; font-size: 15px; }
+    .day-button:hover, .hour-button:hover { background: var(--gold); color: #000; }
+  </style>
 </head>
 <body>
-    <h1>💈 Asistente Virtual - Peluquería Alejandro Luque</h1>
-    <div id="chat-container">
-        <div id="chat"></div>
-        <!-- LOS BOTONES HAN SIDO ELIMINADOS DE AQUÍ -->
-        <div id="entrada-container">
-            <div id="entrada">
-                <input type="text" id="inputTexto" placeholder="Escribe un mensaje...">
-                <button onclick="enviarMensajeDesdeInput()">Enviar</button>
-            </div>
-        </div>
+  <div id="chat-wrap">
+    <div id="chat-head">💈 Asistente Virtual — Peluquería Sialweb</div>
+    <div id="chat"></div>
+    <div id="input-area">
+      <input id="inputTexto" type="text" placeholder="Escribe un mensaje..." autocomplete="off" />
+      <button id="btnEnviar">Enviar</button>
     </div>
+  </div>
 
-    <script>
-        const chat = document.getElementById("chat");
-        const input = document.getElementById("inputTexto");
-        const user_id = 'session_' + Date.now();
+  <script>
+    const API_URL = "http://127.0.0.1:5001/mensaje";
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("inputTexto");
+    const btnEnviar = document.getElementById("btnEnviar");
 
-        function agregarMensaje(texto, clase) {
-            const wrapper = document.createElement("div");
-            wrapper.className = "mensaje " + clase;
-            wrapper.innerHTML = texto.replace(/\n/g, '<br>');
-            chat.appendChild(wrapper);
+    function agregarMensaje(texto, tipo) {
+      const div = document.createElement("div");
+      div.className = `msg ${tipo}`;
+      div.textContent = texto;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function dibujarComponente(componente) {
+        const container = document.createElement("div");
+        container.className = "component-container";
+        
+        let selectorDiv;
+        if (componente.type === 'day_selector') {
+            selectorDiv = document.createElement("div");
+            selectorDiv.className = "day-selector";
+            componente.days.forEach(item => {
+                const button = document.createElement("button");
+                button.className = "day-button";
+                button.textContent = item.display;
+                button.addEventListener("click", () => enviarMensaje(item.value));
+                selectorDiv.appendChild(button);
+            });
+        } else if (componente.type === 'hour_selector') {
+            selectorDiv = document.createElement("div");
+            selectorDiv.className = "hour-selector";
+            componente.hours.forEach(item => {
+                const button = document.createElement("button");
+                button.className = "hour-button";
+                button.textContent = item;
+                button.addEventListener("click", () => enviarMensaje(item));
+                selectorDiv.appendChild(button);
+            });
+        }
+
+        if (selectorDiv) {
+            container.appendChild(selectorDiv);
+            chat.appendChild(container);
             chat.scrollTop = chat.scrollHeight;
         }
+    }
 
-        async function enviarMensaje(texto) {
-            if (!texto && texto !== "") return;
-            
-            if (texto !== "") {
-                agregarMensaje(texto, "usuario");
-            }
-            input.value = "";
-
-            try {
-                const response = await fetch("/mensaje", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ mensaje: texto, user_id })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                agregarMensaje(data.respuesta, "bot");
-
-            } catch (error) {
-                console.error('Error en fetch:', error);
-                agregarMensaje("❌ Error al conectar con el servidor.", "bot");
-            }
-        }
-
-        function enviarMensajeDesdeInput() {
-            const texto = input.value.trim();
-            enviarMensaje(texto);
-        }
-
-        // Al cargar la página, enviamos un mensaje vacío para obtener el saludo inicial.
-        window.onload = () => {
-            enviarMensaje("");
-        };
-
-        input.addEventListener("keypress", function(e) {
-            if (e.key === "Enter") {
-                enviarMensajeDesdeInput();
-            }
+    async function enviarMensaje(textoUsuario) {
+      if (textoUsuario) {
+        agregarMensaje(textoUsuario, "user");
+      }
+      
+      try {
+        const respuesta = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ mensaje: textoUsuario })
         });
-    </script>
+        if (!respuesta.ok) throw new Error(`Error del servidor: ${respuesta.status}`);
+        const datos = await respuesta.json();
+        if (datos && datos.respuesta) {
+          agregarMensaje(datos.respuesta, "bot");
+        }
+        if (datos && datos.ui_component) {
+          dibujarComponente(datos.ui_component);
+        }
+      } catch (error) {
+        agregarMensaje("❌ Error de conexión.", "bot");
+      }
+    }
+    
+    function manejarEnvio() {
+        const texto = input.value.trim();
+        if (texto) {
+            enviarMensaje(texto);
+            input.value = "";
+            input.focus();
+        }
+    }
+
+    btnEnviar.addEventListener("click", manejarEnvio);
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        manejarEnvio();
+      }
+    });
+
+    window.addEventListener("DOMContentLoaded", () => enviarMensaje(""));
+  </script>
 </body>
 </html>
-
-

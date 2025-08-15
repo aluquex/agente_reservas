@@ -1,6 +1,5 @@
+# requirements.txt
 Flask
-gunicorn
+Flask-CORS
+pytz
 psycopg2-binary
-python-dateutil
-dateparser
-requests
