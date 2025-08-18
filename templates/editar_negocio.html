@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Negocio — Sialweb</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #000; --text: #fff; --muted: #d6d6d6; --gold: #d4af37; --gold-2: #b9931a; --card: #0f0f0f; --ring: rgba(212, 175, 55, .35); }
+        body { font-family: "Cormorant Garamond", ui-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: var(--card); padding: 20px 30px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
+        h1, h2, h3 { color: var(--gold); border-bottom: 1px solid rgba(255, 255, 255, .08); padding-bottom: 15px; letter-spacing: .5px; }
+        h3 { border: none; padding-bottom: 5px; }
+        form { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
+        label { font-weight: bold; color: var(--muted); margin-top: 10px; }
+        input[type="text"], input[type="email"], input[type="number"] { background: #0e0e0e; color: var(--text); padding: 10px 14px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px; font-size: 16px; font-family: inherit; width: 100%; box-sizing: border-box; }
+        input[type="text"]:focus, input[type="email"]:focus, input[type="number"]:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--ring); }
+        button, .btn { background: var(--gold); color: #151515; padding: 12px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background .2s; margin-top: 15px; text-decoration: none; display: inline-block; text-align: center; }
+        button:hover, .btn:hover { background: var(--gold-2); }
+        .dynamic-list { display: flex; flex-direction: column; gap: 10px; }
+        .dynamic-item { display: flex; gap: 10px; align-items: center; }
+        .dynamic-item input { flex: 1; }
+        .add-btn { background: #333; font-size: 14px; padding: 8px 12px; align-self: flex-start; }
+        a.btn { padding: 8px 12px; font-size: 14px; }
+        .horarios-grid { display: grid; grid-template-columns: 150px 1fr; gap: 10px 20px; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Editar Negocio: {{ negocio['nombre'] }}</h1>
+        
+        <form action="{{ url_for('editar_negocio_ruta', negocio_id=negocio['id'], password=request.args.get('password')) }}" method="post">
+            
+            <h2>Datos Generales</h2>
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" name="nombre" value="{{ negocio['nombre'] }}" required>
+
+            <label for="slug">Slug URL:</label>
+            <input type="text" id="slug" name="slug" value="{{ negocio['slug'] }}" required>
+
+            <label for="direccion">Dirección:</label>
+            <input type="text" id="direccion" name="direccion" value="{{ negocio['direccion'] or '' }}">
+
+            <label for="telefono">Teléfono:</label>
+            <input type="text" id="telefono" name="telefono" value="{{ negocio['telefono'] or '' }}">
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="{{ negocio['email'] or '' }}">
+
+            <h2>Horario Semanal</h2>
+            <p style="color: var(--muted); font-size: 14px;">Introduce las horas disponibles separadas por comas (ej: 10:00,11:00,12:00). Deja vacío si el día está cerrado.</p>
+            <div class="horarios-grid">
+                {% for dia in ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] %}
+                    <label for="horario_{{ dia }}">{{ dia.capitalize() }}:</label>
+                    <input type="text" id="horario_{{ dia }}" name="horario_{{ dia }}" value="{{ negocio['horario_' + dia] or '' }}">
+                {% endfor %}
+            </div>
+
+            <h2>Servicios</h2>
+            <div id="servicios-list" class="dynamic-list">
+                {% for servicio in negocio.servicios %}
+                <div class="dynamic-item">
+                    <input type="text" name="servicio_nombre_{{ loop.index0 }}" value="{{ servicio.nombre }}" required>
+                    <input type="number" name="servicio_precio_{{ loop.index0 }}" value="{{ servicio.precio }}" step="0.01" required>
+                    <input type="number" name="servicio_duracion_{{ loop.index0 }}" value="{{ servicio.duracion_minutos }}" required>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" onclick="addServicio()" class="add-btn">Añadir Servicio</button>
+
+            <h2>Empleados</h2>
+            <div id="empleados-list" class="dynamic-list">
+                {% for empleado in negocio.empleados %}
+                <div class="dynamic-item">
+                    <input type="text" name="empleado_nombre_{{ loop.index0 }}" value="{{ empleado.nombre }}" required>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" onclick="addEmpleado()" class="add-btn">Añadir Empleado</button>
+            
+            <button type="submit">Guardar Cambios</button>
+        </form>
+        <a href="{{ url_for('lista_negocios_ruta', password=request.args.get('password')) }}" class="btn" style="background: #555;">Volver al Listado</a>
+    </div>
+
+    <script>
+        function addServicio() {
+            const list = document.getElementById('servicios-list'); const index = list.children.length;
+            const item = document.createElement('div'); item.className = 'dynamic-item';
+            item.innerHTML = `<input type="text" name="servicio_nombre_${index}" placeholder="Nombre" required> <input type="number" name="servicio_precio_${index}" placeholder="Precio" step="0.01" required> <input type="number" name="servicio_duracion_${index}" placeholder="Duración" required>`;
+            list.appendChild(item);
+        }
+        function addEmpleado() {
+            const list = document.getElementById('empleados-list'); const index = list.children.length;
+            const item = document.createElement('div'); item.className = 'dynamic-item';
+            item.innerHTML = `<input type="text" name="empleado_nombre_${index}" placeholder="Nombre" required>`;
+            list.appendChild(item);
+        }
+    </script>
+</body>
+</html>
