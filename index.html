@@ -42,10 +42,14 @@
   </div>
 
   <script>
-    const API_URL = "http://127.0.0.1:5001/mensaje";
+    const API_URL_BASE = "http://127.0.0.1:5001/mensaje";
     const chat = document.getElementById("chat");
     const input = document.getElementById("inputTexto");
     const btnEnviar = document.getElementById("btnEnviar");
+    
+    let isFirstMessage = true;
+    const urlParams = new URLSearchParams(window.location.search);
+    const businessSlug = urlParams.get('business');
 
     function agregarMensaje(texto, tipo) {
       const div = document.createElement("div");
@@ -55,47 +59,24 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // --- FUNCIÓN DE DIBUJO DE COMPONENTES MEJORADA ---
     function dibujarComponente(componente) {
         const container = document.createElement("div");
         container.className = "component-container";
-        
         let selectorDiv;
         if (componente.type === 'day_selector') {
             selectorDiv = document.createElement("div"); selectorDiv.className = "day-selector";
-            componente.days.forEach(item => {
-                const button = document.createElement("button"); button.className = "day-button";
-                button.textContent = item.display;
-                button.addEventListener("click", () => enviarMensaje(item.value));
-                selectorDiv.appendChild(button);
-            });
+            componente.days.forEach(item => { const button = document.createElement("button"); button.className = "day-button"; button.textContent = item.display; button.addEventListener("click", () => enviarMensaje(item.value)); selectorDiv.appendChild(button); });
         } else if (componente.type === 'hour_selector') {
             selectorDiv = document.createElement("div"); selectorDiv.className = "hour-selector";
-            componente.hours.forEach(item => {
-                const button = document.createElement("button"); button.className = "hour-button";
-                button.textContent = item;
-                button.addEventListener("click", () => enviarMensaje(item));
-                selectorDiv.appendChild(button);
-            });
-        } else if (componente.type === 'choice_buttons') { // <-- Nuevo tipo de componente
+            componente.hours.forEach(item => { const button = document.createElement("button"); button.className = "hour-button"; button.textContent = item; button.addEventListener("click", () => enviarMensaje(item)); selectorDiv.appendChild(button); });
+        } else if (componente.type === 'choice_buttons') {
             selectorDiv = document.createElement("div"); selectorDiv.className = "choice-selector";
-            componente.choices.forEach(item => {
-                const button = document.createElement("button"); button.className = "choice-button";
-                button.textContent = item;
-                button.addEventListener("click", () => enviarMensaje(item));
-                selectorDiv.appendChild(button);
-            });
+            componente.choices.forEach(item => { const button = document.createElement("button"); button.className = "choice-button"; button.textContent = item; button.addEventListener("click", () => enviarMensaje(item)); selectorDiv.appendChild(button); });
         }
-
-        if (selectorDiv) {
-            container.appendChild(selectorDiv);
-            chat.appendChild(container);
-            chat.scrollTop = chat.scrollHeight;
-        }
+        if (selectorDiv) { container.appendChild(selectorDiv); chat.appendChild(container); chat.scrollTop = chat.scrollHeight; }
     }
 
     async function enviarMensaje(textoUsuario) {
-      // Ocultamos la barra de texto mientras el bot responde para evitar envíos múltiples
       document.getElementById('input-area').style.display = 'none';
 
       if (textoUsuario) {
@@ -103,7 +84,13 @@
       }
       
       try {
-        const respuesta = await fetch(API_URL, {
+        let finalApiUrl = API_URL_BASE;
+        
+        if (isFirstMessage && businessSlug) {
+          finalApiUrl += `?business=${businessSlug}`;
+        }
+        
+        const respuesta = await fetch(finalApiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -115,13 +102,20 @@
         if (datos && datos.respuesta) {
           agregarMensaje(datos.respuesta, "bot");
         }
-        if (datos && datos.ui_component) {
+        if (datos && datos.post_respuesta) {
+            agregarMensaje(datos.post_respuesta.respuesta, "bot");
+            if (datos.post_respuesta.ui_component) {
+                dibujarComponente(datos.post_respuesta.ui_component);
+            }
+        } 
+        else if (datos && datos.ui_component) {
           dibujarComponente(datos.ui_component);
         }
+
+        isFirstMessage = false;
       } catch (error) {
         agregarMensaje("❌ Error de conexión.", "bot");
       } finally {
-        // Volvemos a mostrar la barra de texto al final, pase lo que pase
         document.getElementById('input-area').style.display = 'flex';
         input.focus();
       }
@@ -129,21 +123,13 @@
     
     function manejarEnvio() {
         const texto = input.value.trim();
-        // Permitimos el envío de texto vacío solo si NO hay botones en pantalla
         const hayBotones = chat.querySelector('button');
-        if (texto || !hayBotones) {
-            enviarMensaje(texto);
-            input.value = "";
-            input.focus();
-        }
+        if (texto || !hayBotones) { enviarMensaje(texto); input.value = ""; input.focus(); }
     }
 
     btnEnviar.addEventListener("click", manejarEnvio);
     input.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        manejarEnvio();
-      }
+      if (e.key === "Enter") { e.preventDefault(); manejarEnvio(); }
     });
 
     window.addEventListener("DOMContentLoaded", () => enviarMensaje(""));
