@@ -4,7 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>💈 Asistente Virtual — Peluquería Sialweb</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- --- CAMBIO DE FUENTE --- -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg:#000; --text:#fff; --muted:#d6d6d6; --gold:#d4af37; --gold-2:#b9931a;
@@ -12,17 +15,18 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{ margin:0;background:var(--bg);color:var(--text);font-family:"Cormorant Garamond", ui-serif, Georgia, "Times New Roman", serif;display:flex;align-items:center;justify-content:center;padding:24px; }
+    /* --- CAMBIO DE FUENTE --- */
+    body{ margin:0;background:var(--bg);color:var(--text);font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;display:flex;align-items:center;justify-content:center;padding:24px; font-size: 16px; }
     #chat-wrap{ width:min(780px, 92vw);background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06) inset;overflow:hidden; }
     #chat-head{ padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));font-weight:600; letter-spacing:.2px;color:var(--gold); }
     #chat{ height:min(60vh, 560px);min-height:360px; padding:16px; overflow-y:auto; scroll-behavior:smooth; }
-    .msg{margin:10px 0; padding:10px 14px; border-radius:18px; max-width:85%; line-height:1.45; border:1px solid transparent; white-space: pre-wrap;}
+    .msg{margin:10px 0; padding:10px 14px; border-radius:18px; max-width:85%; line-height:1.5; border:1px solid transparent; white-space: pre-wrap;}
     .bot{background:var(--bubble); color:var(--text); float:left; clear:both; border-color:rgba(255,255,255,.08); box-shadow:0 6px 18px rgba(0,0,0,.35)}
     .user{background:var(--bubble-user); color:var(--text); float:right; clear:both; border-color:rgba(15,76,129,.25); box-shadow:0 6px 18px rgba(0,0,0,.35)}
     #input-area{display:flex; gap:10px; padding:12px; border-top:1px solid rgba(255,255,255,.08); background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01))}
-    #inputTexto{flex:1; padding:12px 14px; font-size:16px; color:var(--text); background:#0e0e0e; border:1px solid rgba(255,255,255,.14); border-radius:18px; outline:none; transition:box-shadow .15s, border-color .15s}
+    #inputTexto{flex:1; padding:12px 14px; font-size:16px; color:var(--text); background:#0e0e0e; border:1px solid rgba(255,255,255,.14); border-radius:18px; outline:none; transition:box-shadow .15s, border-color .15s; font-family: inherit;}
     #inputTexto:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--ring)}
-    button{ padding:12px 18px; font-size:16px; font-weight:600; color:#151515; background:linear-gradient(180deg, var(--gold), var(--gold)); border:1px solid var(--gold); border-radius:18px; cursor:pointer; transition:transform .15s, box-shadow .15s, background .15s, border-color .15s; }
+    button{ padding:12px 18px; font-size:16px; font-weight:600; color:#151515; background:linear-gradient(180deg, var(--gold), var(--gold)); border:1px solid var(--gold); border-radius:18px; cursor:pointer; transition:transform .15s, box-shadow .15s, background .15s, border-color .15s; font-family: inherit;}
     button:hover{ transform:translateY(-1px); background:linear-gradient(180deg, var(--gold-2), var(--gold-2)); border-color:var(--gold-2); box-shadow:0 8px 22px rgba(212,175,55,.25); }
     button:active{ transform:translateY(0); box-shadow:none; }
     .component-container { float: left; clear: both; width: 100%; margin: 10px 0; }
@@ -46,11 +50,9 @@
     const chat = document.getElementById("chat");
     const input = document.getElementById("inputTexto");
     const btnEnviar = document.getElementById("btnEnviar");
-    
     let isFirstMessage = true;
     const urlParams = new URLSearchParams(window.location.search);
     const businessSlug = urlParams.get('business');
-
     function agregarMensaje(texto, tipo) {
       const div = document.createElement("div");
       div.className = `msg ${tipo}`;
@@ -58,7 +60,6 @@
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
-
     function dibujarComponente(componente) {
         const container = document.createElement("div");
         container.className = "component-container";
@@ -75,21 +76,16 @@
         }
         if (selectorDiv) { container.appendChild(selectorDiv); chat.appendChild(container); chat.scrollTop = chat.scrollHeight; }
     }
-
     async function enviarMensaje(textoUsuario) {
       document.getElementById('input-area').style.display = 'none';
-
       if (textoUsuario) {
         agregarMensaje(textoUsuario, "user");
       }
-      
       try {
         let finalApiUrl = API_URL_BASE;
-        
         if (isFirstMessage && businessSlug) {
           finalApiUrl += `?business=${businessSlug}`;
         }
-        
         const respuesta = await fetch(finalApiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -98,7 +94,6 @@
         });
         if (!respuesta.ok) throw new Error(`Error del servidor: ${respuesta.status}`);
         const datos = await respuesta.json();
-        
         if (datos && datos.respuesta) {
           agregarMensaje(datos.respuesta, "bot");
         }
@@ -111,7 +106,6 @@
         else if (datos && datos.ui_component) {
           dibujarComponente(datos.ui_component);
         }
-
         isFirstMessage = false;
       } catch (error) {
         agregarMensaje("❌ Error de conexión.", "bot");
@@ -120,18 +114,15 @@
         input.focus();
       }
     }
-    
     function manejarEnvio() {
         const texto = input.value.trim();
         const hayBotones = chat.querySelector('button');
         if (texto || !hayBotones) { enviarMensaje(texto); input.value = ""; input.focus(); }
     }
-
     btnEnviar.addEventListener("click", manejarEnvio);
     input.addEventListener("keypress", (e) => {
       if (e.key === "Enter") { e.preventDefault(); manejarEnvio(); }
     });
-
     window.addEventListener("DOMContentLoaded", () => enviarMensaje(""));
   </script>
 </body>

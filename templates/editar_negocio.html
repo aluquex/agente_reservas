@@ -3,66 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Negocio — Sialweb</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Editar Negocio — {{ negocio.nombre }}</title>
+    <!-- --- CAMBIO DE FUENTE --- -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --text: #fff; --muted: #d6d6d6; --gold: #d4af37; --gold-2: #b9931a; --card: #0f0f0f; --ring: rgba(212, 175, 55, .35); }
-        body { font-family: "Cormorant Garamond", ui-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        /* --- CAMBIO DE FUENTE --- */
+        body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 16px; }
         .container { max-width: 800px; margin: auto; background: var(--card); padding: 20px 30px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
         h1, h2, h3 { color: var(--gold); border-bottom: 1px solid rgba(255, 255, 255, .08); padding-bottom: 15px; letter-spacing: .5px; }
-        h3 { border: none; padding-bottom: 5px; }
         form { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
         label { font-weight: bold; color: var(--muted); margin-top: 10px; }
         input[type="text"], input[type="email"], input[type="number"] { background: #0e0e0e; color: var(--text); padding: 10px 14px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px; font-size: 16px; font-family: inherit; width: 100%; box-sizing: border-box; }
         input[type="text"]:focus, input[type="email"]:focus, input[type="number"]:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--ring); }
-        button, .btn { background: var(--gold); color: #151515; padding: 12px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background .2s; margin-top: 15px; text-decoration: none; display: inline-block; text-align: center; }
+        button, .btn { background: var(--gold); color: #151515; padding: 12px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background .2s; margin-top: 15px; text-decoration: none; display: inline-block; text-align: center; width: 100%; box-sizing: border-box; font-family: inherit;}
         button:hover, .btn:hover { background: var(--gold-2); }
+        .btn-secondary { background: #333; color: var(--text); border: 1px solid #555; }
+        .btn-secondary:hover { background: #444; border-color: #666; }
         .dynamic-list { display: flex; flex-direction: column; gap: 10px; }
         .dynamic-item { display: flex; gap: 10px; align-items: center; }
         .dynamic-item input { flex: 1; }
-        .add-btn { background: #333; font-size: 14px; padding: 8px 12px; align-self: flex-start; }
-        a.btn { padding: 8px 12px; font-size: 14px; }
-        .horarios-grid { display: grid; grid-template-columns: 150px 1fr; gap: 10px 20px; align-items: center; }
+        .add-btn { background: #333; font-size: 14px; padding: 8px 12px; align-self: flex-start; width: auto; }
+        .horario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 20px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Editar Negocio: {{ negocio['nombre'] }}</h1>
-        
-        <form action="{{ url_for('editar_negocio_ruta', negocio_id=negocio['id'], password=request.args.get('password')) }}" method="post">
-            
+        <a href="{{ url_for('lista_negocios_ruta', password=password) }}" class="btn btn-secondary" style="margin-bottom: 20px; width: auto;">&larr; Volver a la Lista</a>
+        <h1>Editar Negocio</h1>
+        <form action="{{ url_for('editar_negocio_ruta', negocio_id=negocio.id, password=password) }}" method="post">
             <h2>Datos Generales</h2>
-            <label for="nombre">Nombre:</label>
-            <input type="text" id="nombre" name="nombre" value="{{ negocio['nombre'] }}" required>
-
-            <label for="slug">Slug URL:</label>
-            <input type="text" id="slug" name="slug" value="{{ negocio['slug'] }}" required>
-
-            <label for="direccion">Dirección:</label>
-            <input type="text" id="direccion" name="direccion" value="{{ negocio['direccion'] or '' }}">
-
-            <label for="telefono">Teléfono:</label>
-            <input type="text" id="telefono" name="telefono" value="{{ negocio['telefono'] or '' }}">
-
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" value="{{ negocio['email'] or '' }}">
-
+            <label for="nombre">Nombre:</label> <input type="text" id="nombre" name="nombre" value="{{ negocio.nombre }}" required>
+            <label for="slug">Slug URL:</label> <input type="text" id="slug" name="slug" value="{{ negocio.slug }}" required>
+            <label for="direccion">Dirección:</label> <input type="text" id="direccion" name="direccion" value="{{ negocio.direccion or '' }}">
+            <label for="telefono">Teléfono:</label> <input type="text" id="telefono" name="telefono" value="{{ negocio.telefono or '' }}">
+            <label for="email">Email:</label> <input type="email" id="email" name="email" value="{{ negocio.email or '' }}">
+            
             <h2>Horario Semanal</h2>
-            <p style="color: var(--muted); font-size: 14px;">Introduce las horas disponibles separadas por comas (ej: 10:00,11:00,12:00). Deja vacío si el día está cerrado.</p>
-            <div class="horarios-grid">
-                {% for dia in ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] %}
-                    <label for="horario_{{ dia }}">{{ dia.capitalize() }}:</label>
-                    <input type="text" id="horario_{{ dia }}" name="horario_{{ dia }}" value="{{ negocio['horario_' + dia] or '' }}">
-                {% endfor %}
+            <p style="color: var(--muted); margin-top: -10px; font-size: 14px;">Introduce las horas disponibles separadas por comas (ej: 09:00,10:00,11:00). Deja vacío si el día está cerrado.</p>
+            <div class="horario-grid">
+                <div><label for="horario_lunes">Lunes:</label> <input type="text" id="horario_lunes" name="horario_lunes" value="{{ negocio.horario_lunes or '' }}"></div>
+                <div><label for="horario_martes">Martes:</label> <input type="text" id="horario_martes" name="horario_martes" value="{{ negocio.horario_martes or '' }}"></div>
+                <div><label for="horario_miercoles">Miércoles:</label> <input type="text" id="horario_miercoles" name="horario_miercoles" value="{{ negocio.horario_miercoles or '' }}"></div>
+                <div><label for="horario_jueves">Jueves:</label> <input type="text" id="horario_jueves" name="horario_jueves" value="{{ negocio.horario_jueves or '' }}"></div>
+                <div><label for="horario_viernes">Viernes:</label> <input type="text" id="horario_viernes" name="horario_viernes" value="{{ negocio.horario_viernes or '' }}"></div>
+                <div><label for="horario_sabado">Sábado:</label> <input type="text" id="horario_sabado" name="horario_sabado" value="{{ negocio.horario_sabado or '' }}"></div>
+                <div><label for="horario_domingo">Domingo:</label> <input type="text" id="horario_domingo" name="horario_domingo" value="{{ negocio.horario_domingo or '' }}"></div>
             </div>
 
             <h2>Servicios</h2>
             <div id="servicios-list" class="dynamic-list">
                 {% for servicio in negocio.servicios %}
                 <div class="dynamic-item">
-                    <input type="text" name="servicio_nombre_{{ loop.index0 }}" value="{{ servicio.nombre }}" required>
-                    <input type="number" name="servicio_precio_{{ loop.index0 }}" value="{{ servicio.precio }}" step="0.01" required>
-                    <input type="number" name="servicio_duracion_{{ loop.index0 }}" value="{{ servicio.duracion_minutos }}" required>
+                    <input type="text" name="servicio_nombre_{{ loop.index0 }}" placeholder="Nombre" value="{{ servicio.nombre }}" required>
+                    <input type="number" name="servicio_precio_{{ loop.index0 }}" placeholder="Precio" step="0.01" value="{{ servicio.precio }}" required>
+                    <input type="number" name="servicio_duracion_{{ loop.index0 }}" placeholder="Duración (min)" value="{{ servicio.duracion }}" required>
                 </div>
                 {% endfor %}
             </div>
@@ -72,7 +69,7 @@
             <div id="empleados-list" class="dynamic-list">
                 {% for empleado in negocio.empleados %}
                 <div class="dynamic-item">
-                    <input type="text" name="empleado_nombre_{{ loop.index0 }}" value="{{ empleado.nombre }}" required>
+                    <input type="text" name="empleado_nombre_{{ loop.index0 }}" placeholder="Nombre" value="{{ empleado.nombre }}" required>
                 </div>
                 {% endfor %}
             </div>
@@ -80,14 +77,12 @@
             
             <button type="submit">Guardar Cambios</button>
         </form>
-        <a href="{{ url_for('lista_negocios_ruta', password=request.args.get('password')) }}" class="btn" style="background: #555;">Volver al Listado</a>
     </div>
-
     <script>
         function addServicio() {
             const list = document.getElementById('servicios-list'); const index = list.children.length;
             const item = document.createElement('div'); item.className = 'dynamic-item';
-            item.innerHTML = `<input type="text" name="servicio_nombre_${index}" placeholder="Nombre" required> <input type="number" name="servicio_precio_${index}" placeholder="Precio" step="0.01" required> <input type="number" name="servicio_duracion_${index}" placeholder="Duración" required>`;
+            item.innerHTML = `<input type="text" name="servicio_nombre_${index}" placeholder="Nombre" required> <input type="number" name="servicio_precio_${index}" placeholder="Precio" step="0.01" required> <input type="number" name="servicio_duracion_${index}" placeholder="Duración (min)" required>`;
             list.appendChild(item);
         }
         function addEmpleado() {

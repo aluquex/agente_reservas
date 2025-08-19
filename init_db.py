@@ -19,6 +19,7 @@ try:
 
     # --- BORRADO DE TABLAS EXISTENTES (para un inicio limpio) ---
     print("Eliminando tablas antiguas si existen...")
+    cur.execute("DROP TABLE IF EXISTS bloqueos CASCADE;")
     cur.execute("DROP TABLE IF EXISTS citas CASCADE;")
     cur.execute("DROP TABLE IF EXISTS servicios CASCADE;")
     cur.execute("DROP TABLE IF EXISTS empleados CASCADE;")
@@ -46,7 +47,6 @@ try:
     """)
 
     # --- CREACIÓN DE LA TABLA 'servicios' ---
-    # ¡AQUÍ ESTÁ LA CLAVE! AÑADIMOS LA COLUMNA 'duracion'
     print("Creando la tabla 'servicios'...")
     cur.execute("""
         CREATE TABLE servicios (
@@ -83,15 +83,28 @@ try:
             UNIQUE(negocio_id, empleado_id, fecha, hora)
         );
     """)
+
+    # --- CREACIÓN DE LA TABLA 'bloqueos' ---
+    print("Creando la tabla 'bloqueos'...")
+    cur.execute("""
+        CREATE TABLE bloqueos (
+            id SERIAL PRIMARY KEY,
+            negocio_id INTEGER NOT NULL REFERENCES negocios(id) ON DELETE CASCADE,
+            fecha DATE NOT NULL,
+            hora TIME NOT NULL,
+            empleado_id INTEGER REFERENCES empleados(id),
+            UNIQUE(negocio_id, fecha, hora, empleado_id)
+        );
+    """)
     print("Todas las tablas han sido creadas con éxito.")
 
     # --- INSERCIÓN DE DATOS DE EJEMPLO ---
     print("Insertando datos de ejemplo...")
 
-    # Negocio 1: Peluquería Samuel T
+    # Negocio 1: Peluquería Samuel T (Cliente real de ejemplo)
     cur.execute(
         "INSERT INTO negocios (nombre, slug, horario_viernes, horario_sabado) VALUES (%s, %s, %s, %s) RETURNING id;",
-        ("Peluqueria Samuel T", "Samuel_Torrico", "09:00,10:00,11:00,12:00,16:00,17:00,18:00", "09:00,10:00,11:00,12:00")
+        ("Peluqueria Samuel T", "ST", "09:00,10:00,11:00,12:00,16:00,17:00,18:00", "09:00,10:00,11:00,12:00")
     )
     samuel_id = cur.fetchone()[0]
     cur.execute("INSERT INTO servicios (negocio_id, nombre, precio, duracion) VALUES (%s, %s, %s, %s);", (samuel_id, 'Corte Adulto', 15.00, 30))
@@ -99,15 +112,25 @@ try:
     cur.execute("INSERT INTO empleados (negocio_id, nombre) VALUES (%s, %s);", (samuel_id, 'Samuel'))
     cur.execute("INSERT INTO empleados (negocio_id, nombre) VALUES (%s, %s);", (samuel_id, 'Laura'))
 
-    # Negocio 2: DC Barber
+    # Negocio 2: DC Barber (Cliente real de ejemplo)
     cur.execute(
         "INSERT INTO negocios (nombre, slug, horario_lunes, horario_martes) VALUES (%s, %s, %s, %s) RETURNING id;",
-        ("DC Barber", "DC_BARBER", "10:00,11:00,12:00", "10:00,11:00,12:00,17:00,18:00")
+        ("DC Barber", "DCB", "10:00,11:00,12:00", "10:00,11:00,12:00,17:00,18:00")
     )
     dc_id = cur.fetchone()[0]
     cur.execute("INSERT INTO servicios (negocio_id, nombre, precio, duracion) VALUES (%s, %s, %s, %s);", (dc_id, 'Corte Premium', 20.00, 30))
     cur.execute("INSERT INTO servicios (negocio_id, nombre, precio, duracion) VALUES (%s, %s, %s, %s);", (dc_id, 'Arreglo de Barba', 10.00, 15))
     cur.execute("INSERT INTO empleados (negocio_id, nombre) VALUES (%s, %s);", (dc_id, 'Daniel'))
+
+    # Negocio 3: Demo Pública (Para la Landing Page)
+    cur.execute(
+        "INSERT INTO negocios (nombre, slug, horario_lunes, horario_martes, horario_miercoles, horario_jueves, horario_viernes) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;",
+        ("Peluquería SialWeb (Demo)", "demo", "09:00,10:00,11:00,12:00", "09:00,10:00,11:00,12:00", "09:00,10:00,11:00,12:00", "09:00,10:00,11:00,12:00", "09:00,10:00,11:00,12:00")
+    )
+    demo_id = cur.fetchone()[0]
+    cur.execute("INSERT INTO servicios (negocio_id, nombre, precio, duracion) VALUES (%s, %s, %s, %s);", (demo_id, 'Corte de Demostración', 10.00, 20))
+    cur.execute("INSERT INTO servicios (negocio_id, nombre, precio, duracion) VALUES (%s, %s, %s, %s);", (demo_id, 'Peinado de Exhibición', 15.00, 30))
+    cur.execute("INSERT INTO empleados (negocio_id, nombre) VALUES (%s, %s);", (demo_id, 'Alex (IA)'))
 
     print("Datos de ejemplo insertados.")
 

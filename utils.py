@@ -1,62 +1,49 @@
 # utils.py
 import unicodedata
-from difflib import get_close_matches
 from datetime import datetime
-import pytz
-import locale
-import re
-
-try:
-    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
-except locale.Error:
-    locale.setlocale(locale.LC_TIME, 'Spanish_Spain.1252')
+from difflib import get_close_matches
+# Ya no necesitamos el módulo locale, lo quitamos para evitar confusiones.
 
 def normalizar_texto(texto):
-    return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8', 'ignore').lower()
+    texto = texto.lower()
+    nfkd_form = unicodedata.normalize('NFKD', texto)
+    return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def validar_nombre(nombre):
-    if not nombre or len(nombre) < 2 or len(nombre) > 50:
-        return False
-    return bool(re.fullmatch(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$', nombre))
+    return len(nombre) > 2 and all(c.isalpha() or c.isspace() for c in nombre)
 
-def encontrar_servicio_mas_cercano(texto_usuario, lista_servicios):
-    texto_normalizado = normalizar_texto(texto_usuario)
-
-    # Creamos un diccionario: texto_normalizado => texto_original
-    mapa_normalizados = {normalizar_texto(s): s for s in lista_servicios}
-    lista_normalizados = list(mapa_normalizados.keys())
-
-    coincidencias = get_close_matches(texto_normalizado, lista_normalizados, n=1, cutoff=0.6)
-
-    if coincidencias:
-        return mapa_normalizados[coincidencias[0]]
-    else:
-        return None
+def encontrar_servicio_mas_cercano(texto, lista_servicios):
+    texto_norm = normalizar_texto(texto)
+    servicios_norm = {normalizar_texto(s): s for s in lista_servicios}
+    
+    mejores_coincidencias = get_close_matches(texto_norm, servicios_norm.keys(), n=1, cutoff=0.6)
+    
+    if mejores_coincidencias:
+        return servicios_norm[mejores_coincidencias[0]]
+    return None
 
 def now_spain():
-    tz_spain = pytz.timezone('Europe/Madrid')
-    return datetime.now(tz_spain)
+    return datetime.now()
 
+# --- LA SOLUCIÓN A PRUEBA DE BALAS ---
 def formato_nombre_dia_es(fecha_obj):
-    return fecha_obj.strftime('%A').capitalize()
+    """
+    Devuelve el nombre del día de la semana en español, con tildes,
+    sin depender de la configuración 'locale' del sistema.
+    """
+    dias_es = {
+        0: "Lunes",
+        1: "Martes",
+        2: "Miércoles",
+        3: "Jueves",
+        4: "Viernes",
+        5: "Sábado",
+        6: "Domingo"
+    }
+    # .weekday() devuelve un número de 0 (lunes) a 6 (domingo)
+    return dias_es.get(fecha_obj.weekday(), "")
 
-# --- NUEVA HERRAMIENTA DE PRECISIÓN ---
 def ha_pasado_fecha_hora(fecha, hora):
-    """
-    Comprueba si una fecha y hora dadas ya han ocurrido.
-    'fecha' es un objeto date.
-    'hora' es un objeto time.
-    """
-    ahora = now_spain()
-    # Creamos un objeto datetime consciente de la zona horaria para la cita
-    cita_dt = pytz.timezone('Europe/Madrid').localize(datetime.combine(fecha, hora))
-    return cita_dt < ahora
-def crear_boton_simple(texto):
-    return {"tipo": "boton", "texto": texto}
-
-def crear_boton_servicio(servicio):
-    nombre = servicio.get("nombre", "Servicio")
-    precio = servicio.get("precio", 0)
-    texto_boton = f"{nombre} ({precio:.2f} €)"
-    return {"tipo": "boton", "texto": texto_boton}
-
+    ahora = datetime.now()
+    fecha_hora_cita = datetime.combine(fecha, hora)
+    return ahora > fecha_hora_cita

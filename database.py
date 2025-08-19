@@ -21,23 +21,17 @@ def obtener_negocio_por_slug(slug):
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            # Buscamos el negocio por su slug (ignorando mayúsculas/minúsculas)
             cur.execute("SELECT * FROM negocios WHERE LOWER(slug) = %s;", (slug,))
             negocio = cur.fetchone()
-            
-            # --- CORRECCIÓN FINAL: Cargamos los servicios y empleados asociados ---
             if negocio:
                 negocio_id = negocio['id']
                 cur.execute("SELECT nombre, precio FROM servicios WHERE negocio_id = %s;", (negocio_id,))
                 servicios = cur.fetchall()
                 cur.execute("SELECT id, nombre FROM empleados WHERE negocio_id = %s;", (negocio_id,))
                 empleados = cur.fetchall()
-                
-                # Convertimos el resultado a un diccionario estándar y añadimos los datos
                 negocio = dict(negocio)
                 negocio['servicios'] = [dict(s) for s in servicios]
                 negocio['empleados'] = [dict(e) for e in empleados]
-                
             return negocio
     finally:
         conn.close()
@@ -60,17 +54,15 @@ def obtener_negocio_por_id(negocio_id):
     finally:
         conn.close()
 
-# (El resto del archivo es correcto y no necesita más cambios)
 def listar_negocios(filtro_nombre=''):
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            query = "SELECT id, nombre, slug FROM negocios"
+            query = "SELECT id, nombre, slug FROM negocios ORDER BY nombre ASC"
             params = []
             if filtro_nombre:
-                query += " WHERE nombre ILIKE %s"
+                query = "SELECT id, nombre, slug FROM negocios WHERE nombre ILIKE %s ORDER BY nombre ASC;"
                 params.append(f"%{filtro_nombre}%")
-            query += " ORDER BY nombre ASC;"
             cur.execute(query, params)
             return cur.fetchall()
     finally:
@@ -147,7 +139,7 @@ def tiene_cita_futura(telefono, negocio_id):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT 1 FROM citas WHERE telefono = %s AND negocio_id = %s AND fecha > NOW()::date;",
+                "SELECT 1 FROM citas WHERE telefono = %s AND negocio_id = %s AND fecha >= NOW()::date;",
                 (telefono, negocio_id)
             )
             return cur.fetchone() is not None
@@ -203,12 +195,20 @@ def obtener_horas_ocupadas(fecha_str, negocio_id, empleado_id):
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            query = "SELECT TO_CHAR(hora, 'HH24:MI') FROM citas WHERE fecha = %s AND negocio_id = %s"
-            params = [fecha_str, negocio_id]
+            sql_citas = "SELECT TO_CHAR(hora, 'HH24:MI') FROM citas WHERE fecha = %s AND negocio_id = %s"
+            params_citas = [fecha_str, negocio_id]
             if empleado_id:
-                query += " AND empleado_id = %s"
-                params.append(empleado_id)
-            cur.execute(query, params)
+                sql_citas += " AND empleado_id = %s"
+                params_citas.append(empleado_id)
+            sql_bloqueos = "SELECT TO_CHAR(hora, 'HH24:MI') FROM bloqueos WHERE fecha = %s AND negocio_id = %s"
+            params_bloqueos = [fecha_str, negocio_id]
+            if empleado_id:
+                sql_bloqueos += " AND (empleado_id IS NULL OR empleado_id = %s)"
+                params_bloqueos.append(empleado_id)
+            else:
+                sql_bloqueos += " AND (empleado_id IS NULL OR empleado_id IS NOT NULL)"
+            final_sql = f"({sql_citas}) UNION ({sql_bloqueos});"
+            cur.execute(final_sql, tuple(params_citas + params_bloqueos))
             return [row[0] for row in cur.fetchall()]
     finally:
         conn.close()
@@ -267,5 +267,95 @@ def modificar_cita(cita_id, negocio_id, nuevos_datos):
             if 'fecha' in nuevos_datos and 'hora' in nuevos_datos:
                 cur.execute("UPDATE citas SET fecha = %s, hora = %s WHERE id = %s;", (nuevos_datos['fecha'], nuevos_datos['hora'], cita_id))
             conn.commit()
+    finally:
+        conn.close()
+
+def obtener_citas_para_exportar(negocio_id, fecha_inicio, fecha_fin):
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            sql = """
+                SELECT c.fecha, c.hora, c.nombre_cliente, c.telefono, s.nombre AS servicio_nombre, e.nombre AS empleado_nombre, s.precio
+                FROM citas c JOIN servicios s ON c.servicio_id = s.id LEFT JOIN empleados e ON c.empleado_id = e.id
+                WHERE c.negocio_id = %s AND c.fecha BETWEEN %s AND %s
+                ORDER BY c.fecha, c.hora;
+            """
+            cur.execute(sql, (negocio_id, fecha_inicio, fecha_fin))
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+def obtener_citas_del_dia(negocio_id, fecha):
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            sql = """
+                SELECT c.id, c.hora, c.nombre_cliente, c.telefono, s.nombre AS servicio_nombre, e.nombre AS empleado_nombre
+                FROM citas AS c JOIN servicios AS s ON c.servicio_id = s.id LEFT JOIN empleados AS e ON c.empleado_id = e.id
+                WHERE c.negocio_id = %s AND c.fecha = %s
+                ORDER BY c.hora;
+            """
+            cur.execute(sql, (negocio_id, fecha))
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+def cancelar_cita_cliente(cita_id, negocio_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM citas WHERE id = %s AND negocio_id = %s;", (cita_id, negocio_id))
+            conn.commit()
+    finally:
+        conn.close()
+
+def obtener_horas_bloqueadas(negocio_id, fecha):
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            sql = "SELECT hora, empleado_id FROM bloqueos WHERE negocio_id = %s AND fecha = %s"
+            cur.execute(sql, (negocio_id, fecha))
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+def crear_bloqueo(negocio_id, fecha, hora, empleado_id=None):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            sql = "INSERT INTO bloqueos (negocio_id, fecha, hora, empleado_id) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING;"
+            cur.execute(sql, (negocio_id, fecha, hora, empleado_id))
+            conn.commit()
+    finally:
+        conn.close()
+
+def eliminar_bloqueo(negocio_id, fecha, hora, empleado_id=None):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            if empleado_id:
+                sql = "DELETE FROM bloqueos WHERE negocio_id = %s AND fecha = %s AND hora = %s AND empleado_id = %s;"
+                params = (negocio_id, fecha, hora, empleado_id)
+            else:
+                sql = "DELETE FROM bloqueos WHERE negocio_id = %s AND fecha = %s AND hora = %s AND empleado_id IS NULL;"
+                params = (negocio_id, fecha, hora)
+            cur.execute(sql, params)
+            conn.commit()
+    finally:
+        conn.close()
+
+def obtener_todas_las_citas(negocio_id):
+    """
+    Obtiene TODAS las citas de un negocio, sin filtro de fecha, para depuración.
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            sql = """
+                SELECT fecha, hora, nombre_cliente, telefono
+                FROM citas WHERE negocio_id = %s ORDER BY fecha, hora;
+            """
+            cur.execute(sql, (negocio_id,))
+            return cur.fetchall()
     finally:
         conn.close()

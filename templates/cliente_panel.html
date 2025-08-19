@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control — {{ negocio.nombre }}</title>
+    <!-- --- CAMBIO DE FUENTE --- -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #000; --text: #fff; --muted: #d6d6d6; --gold: #d4af37; --card: #0f0f0f; --red: #dc3545; --red-hover: #b02a37; }
+        /* --- CAMBIO DE FUENTE --- */
+        body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 16px; }
+        .container { max-width: 900px; margin: auto; background: var(--card); padding: 20px 30px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
+        h1, h2 { color: var(--gold); border-bottom: 1px solid rgba(255, 255, 255, .08); padding-bottom: 15px; letter-spacing: .5px; }
+        h1 small { color: var(--muted); font-size: 16px; font-weight: normal; }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
+        .citas-tabla { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .citas-tabla th, .citas-tabla td { padding: 12px 15px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, .08); }
+        .citas-tabla th { font-size: 14px; color: var(--muted); text-transform: uppercase; }
+        .citas-tabla tr:last-child td { border-bottom: none; }
+        .no-citas { padding: 40px; text-align: center; color: var(--muted); }
+        .btn { text-decoration: none; display: inline-block; text-align: center; padding: 8px 14px; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background .2s, border-color .2s; border: 1px solid transparent; font-family: inherit; }
+        .btn-primary { background: var(--gold); color: #151515; border-color: var(--gold); }
+        .btn-primary:hover { background: var(--gold-2); border-color: var(--gold-2); }
+        .btn-secondary { background: #333; color: var(--text); border-color: #555; }
+        .btn-secondary:hover { background: #444; border-color: #666; }
+        .btn-danger { background: var(--red); color: white; border-color: var(--red); }
+        .btn-danger:hover { background: var(--red-hover); border-color: var(--red-hover); }
+        .flash { padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid transparent; }
+        .flash.success { background-color: rgba(212, 175, 55, .1); color: var(--gold); border-color: rgba(212, 175, 55, .3); }
+        .flash.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .date-picker { margin: 20px 0; display: flex; align-items: center; gap: 15px; }
+        .date-picker input[type="date"] { background: #0e0e0e; color: var(--text); padding: 8px 12px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px; font-size: 16px; font-family: inherit; color-scheme: dark; }
+        .disponible { color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-actions">
+            <h1>Panel de Control <small>{{ negocio.nombre }}</small></h1>
+            <div>
+                <a href="{{ url_for('exportar_citas_csv', negocio_id=negocio.id, password=ADMIN_PASSWORD) }}" class="btn btn-secondary">Exportar Citas del Mes</a>
+                <a href="{{ url_for('gestion_disponibilidad', negocio_id=negocio.id) }}" class="btn btn-primary">Gestionar Disponibilidad</a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}{% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}{% endif %}
+        {% endwith %}
+
+        <div class="date-picker">
+            <label for="fecha">Selecciona una fecha para ver la agenda:</label>
+            <input type="date" id="fecha" name="fecha" value="{{ fecha_seleccionada.isoformat() }}"
+                   onchange="window.location.href = `{{ url_for('panel_cliente', negocio_id=negocio.id) }}?fecha=${this.value}`;">
+        </div>
+
+        <h2>Agenda para el {{ fecha_seleccionada.strftime('%A, %d de %B de %Y') }}</h2>
+        
+        {% if agenda %}
+            <table class="citas-tabla">
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Cliente</th>
+                        <th>Servicio</th>
+                        <th>Profesional</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in agenda %}
+                    <tr>
+                        <td><strong>{{ slot.hora }}</strong></td>
+                        {% if slot.status == 'ocupada' %}
+                            <td>{{ slot.cita.nombre_cliente }}</td>
+                            <td>{{ slot.cita.servicio_nombre }}</td>
+                            <td>{{ slot.cita.empleado_nombre or 'No asignado' }}</td>
+                            <td>
+                                <form action="{{ url_for('cliente_cancelar_cita', cita_id=slot.cita.id, negocio_id=negocio.id) }}" method="post" onsubmit="return confirm('¿Seguro que quieres cancelar esta cita?');">
+                                    <input type="hidden" name="fecha_actual" value="{{ fecha_seleccionada.isoformat() }}">
+                                    <button type="submit" class="btn btn-danger">Cancelar</button>
+                                </form>
+                            </td>
+                        {% else %}
+                            <td colspan="4" class="disponible">-- Disponible --</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="no-citas">Este día está cerrado o no tiene un horario definido.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -47,7 +47,7 @@ def handle_peticion_telefono(texto_usuario):
     telefono = texto_usuario.strip()
     session['telefono'] = telefono
     if database.tiene_cita_futura(telefono, negocio_id=_get_negocio_id()):
-        _limpiar_sesion_conversacion() # Usamos la nueva limpieza
+        _limpiar_sesion_conversacion()
         return { "respuesta": "¡Ojo! Ya tienes una cita pendiente. Si quieres gestionarla, empieza de nuevo y elige 'Gestionar Cita'.", "nuevo_estado": "esperando_eleccion_inicial" }
     
     mensaje_inicial = "¡Recibido!"
@@ -99,32 +99,50 @@ def _mostrar_calendario():
     dias_semana_map = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
     while dia_actual.month == hoy.month:
         nombre_columna_dia = f"horario_{dias_semana_map[dia_actual.weekday()]}"
-        if horario_semanal.get(nombre_columna_dia):
+        if horario_semanal and horario_semanal.get(nombre_columna_dia):
             dias_disponibles.append({ "display": f"{utils.formato_nombre_dia_es(dia_actual)} {dia_actual.strftime('%d/%m')}", "value": dia_actual.strftime('%Y-%m-%d') })
         dia_actual += timedelta(days=1)
     return { "respuesta": "De acuerdo, elige un nuevo día del calendario:", "ui_component": { "type": "day_selector", "days": dias_disponibles }, "nuevo_estado": "pidiendo_hora" }
 
-def _get_horas_jornada_para_dia(dia_semana_num):
-    horario_db = database.obtener_horario_negocio(_get_negocio_id())
+def _get_horas_jornada_para_dia(dia_semana_num, negocio_id=None):
+    """
+    Obtiene las horas de trabajo para un día.
+    Puede recibir un negocio_id directamente para funcionar fuera del contexto del chat.
+    """
+    id_del_negocio = negocio_id if negocio_id is not None else _get_negocio_id()
+    if not id_del_negocio:
+        return []
+    
+    horario_db = database.obtener_horario_negocio(id_del_negocio)
+    if not horario_db:
+        return []
+    
     dias_semana_map = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
     nombre_columna = f"horario_{dias_semana_map[dia_semana_num]}"
     horas_str = horario_db.get(nombre_columna, "")
-    return [h.strip() for h in horas_str.split(',')] if horas_str else []
+    
+    if not horas_str:
+        return []
+    
+    return [h.strip() for h in horas_str.split(',')]
 
 def _mostrar_horas_para_fecha(fecha_str):
     try:
         fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d').date()
         session['fecha'] = fecha_str
         horas_jornada = _get_horas_jornada_para_dia(fecha_obj.weekday())
-        if not horas_jornada:
+        if not horas_jornada: 
             return {"respuesta": f"Lo siento, el día {fecha_obj.strftime('%d/%m')} está cerrado.", "nuevo_estado": "pidiendo_hora"}
+        
         horas_ocupadas = database.obtener_horas_ocupadas(fecha_str, negocio_id=_get_negocio_id(), empleado_id=session.get('empleado_id'))
         ahora = utils.now_spain()
         horas_libres = [h for h in horas_jornada if h not in horas_ocupadas and (fecha_obj > ahora.date() or (fecha_obj == ahora.date() and int(h.split(":")[0]) > ahora.hour))]
+        
         nuevo_estado = 'modificar_confirmar_hora' if session.get('modificando_cita') else 'esperando_pre_confirmacion'
         empleado = session.get('empleado_nombre', 'el profesional seleccionado')
-        if not horas_libres:
+        if not horas_libres: 
             return {"respuesta": f"Vaya, para el día {fecha_obj.strftime('%d/%m')} no quedan huecos con {empleado}.", "nuevo_estado": "pidiendo_hora"}
+        
         return { "respuesta": f"Estupendo. Para el día {fecha_obj.strftime('%d/%m')} con {empleado}, tengo hueco en estas horas:", "ui_component": { "type": "hour_selector", "hours": horas_libres }, "nuevo_estado": nuevo_estado }
     except (ValueError, IndexError):
         return {"respuesta": "No he entendido la fecha. Por favor, elige de nuevo.", "nuevo_estado": "pidiendo_hora"}

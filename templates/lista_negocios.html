@@ -4,54 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestionar Negocios — Sialweb</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- --- CAMBIO DE FUENTE --- -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #000; --text: #fff; --muted: #d6d6d6; --gold: #d4af37; --gold-2: #b9931a; --card: #0f0f0f; --ring: rgba(212, 175, 55, .35); --danger: #e74c3c; }
-        body { font-family: "Cormorant Garamond", ui-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        :root { --bg: #000; --text: #fff; --muted: #d6d6d6; --gold: #d4af37; --gold-2: #b9931a; --card: #0f0f0f; --ring: rgba(212, 175, 55, .35); --red: #dc3545; --red-hover: #b02a37; }
+        /* --- CAMBIO DE FUENTE --- */
+        body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 16px;}
         .container { max-width: 800px; margin: auto; background: var(--card); padding: 20px 30px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
-        h1, h2 { color: var(--gold); border-bottom: 1px solid rgba(255, 255, 255, .08); padding-bottom: 15px; letter-spacing: .5px; }
-        form { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
-        input[type="text"] { background: #0e0e0e; color: var(--text); padding: 10px 14px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px; font-size: 16px; font-family: inherit; flex: 1; }
-        button, .btn { background: var(--gold); color: #151515; padding: 12px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background .2s; text-decoration: none; display: inline-block; text-align: center; }
-        button:hover, .btn:hover { background: var(--gold-2); }
-        .btn.danger { background: var(--danger); }
-        .negocio { border: 1px solid rgba(255, 255, 255, .08); padding: 15px 20px; border-radius: 12px; margin-top: 10px; }
-        .negocio-header { display: flex; justify-content: space-between; align-items: center; }
-        .negocio-actions { display: flex; gap: 10px; }
-        .negocio-actions .btn, .negocio-actions button { padding: 8px 12px; font-size: 14px; margin-top: 0; }
-        .url-magica { background: rgba(0,0,0,.2); border: 1px dashed rgba(255,255,255,.2); padding: 10px; border-radius: 8px; font-family: monospace; word-wrap: break-word; color: var(--muted); }
+        h1 { color: var(--gold); border-bottom: 1px solid rgba(255, 255, 255, .08); padding-bottom: 15px; letter-spacing: .5px; }
+        .btn, button { text-decoration: none; display: inline-block; text-align: center; padding: 10px 18px; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background .2s, border-color .2s; border: 1px solid transparent; font-family: inherit; }
+        .btn-primary { background: var(--gold); color: #151515; border-color: var(--gold); }
+        .btn-primary:hover { background: var(--gold-2); border-color: var(--gold-2); }
+        .btn-secondary { background: #333; color: var(--text); border-color: #555; }
+        .btn-secondary:hover { background: #444; border-color: #666; }
+        .btn-danger { background: var(--red); color: white; border-color: var(--red); }
+        .btn-danger:hover { background: var(--red-hover); border-color: var(--red-hover); }
+        .flash { padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid transparent; }
+        .flash.success { background-color: rgba(212, 175, 55, .1); color: var(--gold); border-color: rgba(212, 175, 55, .3); }
+        .flash.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .search-form { display: flex; gap: 10px; margin: 20px 0; }
+        .search-form input { flex: 1; background: #0e0e0e; color: var(--text); padding: 10px 14px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px; font-size: 16px; font-family: inherit; }
+        .business-list { display: flex; flex-direction: column; gap: 15px; }
+        .business-item { background: #1a1a1a; padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .08); }
+        .business-item-header { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+        .business-info h3 { margin: 0; font-size: 20px; }
+        .business-info code { font-size: 14px; color: var(--muted); }
+        .business-actions { display: flex; gap: 10px; flex-shrink: 0; }
+        .url-magica { margin-top: 15px; }
+        .url-magica p { margin: 5px 0; font-weight: bold; }
+        .url-magica input { width: 100%; background: #0e0e0e; color: var(--gold); padding: 8px; border: 1px solid #333; border-radius: 8px; font-family: monospace; }
     </style>
 </head>
 <body>
     <div class="container">
+        <a href="{{ url_for('admin_panel', password=password) }}" class="btn btn-secondary" style="margin-bottom: 20px;">&larr; Volver al Panel Principal</a>
         <h1>Gestionar Negocios</h1>
-        <a href="{{ url_for('admin_panel', password=request.args.get('password')) }}" class="btn" style="background: #555; margin-bottom: 20px;">Volver al Panel Principal</a>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}{% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}{% endif %}
+        {% endwith %}
 
-        <form method="get">
-            <input type="hidden" name="password" value="{{ request.args.get('password') }}">
+        <form method="get" action="{{ url_for('lista_negocios_ruta') }}" class="search-form">
+            <input type="hidden" name="password" value="{{ password }}">
             <input type="text" name="filtro_nombre" placeholder="Buscar por nombre..." value="{{ request.args.get('filtro_nombre', '') }}">
-            <button type="submit">Buscar</button>
+            <button type="submit" class="btn btn-primary">Buscar</button>
         </form>
 
-        {% if negocios %}
+        <div class="business-list">
             {% for negocio in negocios %}
-                <div class="negocio">
-                    <div class="negocio-header">
+            <div class="business-item">
+                <div class="business-item-header">
+                    <div class="business-info">
                         <h3>{{ negocio.nombre }} (ID: {{ negocio.id }})</h3>
-                        <div class="negocio-actions">
-                            <a href="{{ url_for('editar_negocio_ruta', negocio_id=negocio.id, password=request.args.get('password')) }}" class="btn">Modificar</a>
-                            <form action="{{ url_for('borrar_negocio_ruta', negocio_id=negocio.id, password=request.args.get('password')) }}" method="post" onsubmit="return confirm('¿Estás SEGURO de que quieres borrar este negocio?');">
-                                <button type="submit" class="btn danger">Borrar</button>
-                            </form>
-                        </div>
+                        <code>Slug: {{ negocio.slug }}</code>
                     </div>
-                    <p>URL Mágica:</p>
-                    <div class="url-magica">/index.html?business={{ negocio.slug }}</div>
+                    <div class="business-actions">
+                        <a href="{{ url_for('editar_negocio_ruta', negocio_id=negocio.id, password=password) }}" class="btn btn-primary">Modificar</a>
+                        <form action="{{ url_for('borrar_negocio_ruta', negocio_id=negocio.id, password=password) }}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres borrar este negocio? Esta acción no se puede deshacer.');">
+                            <button type="submit" class="btn btn-danger">Borrar</button>
+                        </form>
+                    </div>
                 </div>
+                <div class="url-magica">
+                    <p>URL Mágica:</p>
+                    <input type="text" value="/index.html?business={{ negocio.slug }}" readonly onclick="this.select()">
+                </div>
+            </div>
+            {% else %}
+            <p>No se encontraron negocios.</p>
             {% endfor %}
-        {% else %}
-            <p>No se encontraron negocios con ese filtro.</p>
-        {% endif %}
+        </div>
     </div>
 </body>
 </html>

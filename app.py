@@ -1,20 +1,32 @@
 # app.py
-from flask import Flask, request, jsonify, session, render_template, flash, redirect, url_for, send_from_directory
+from flask import Flask, request, jsonify, session, render_template, flash, redirect, url_for, send_from_directory, Response
 from flask_cors import CORS
 import config
 import handlers
 import utils
 import database
 import os
+import io
+import csv
+from datetime import datetime, timedelta, date
+import locale # Importamos locale
+
+# Establecemos el locale en español para toda la aplicación.
+try:
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_TIME, 'esp') # Alternativa para Windows
+    except locale.Error:
+        print("Advertencia: No se pudo establecer el locale en español en app.py. Los nombres de los días podrían aparecer en otro idioma.")
+
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
 
 CORS(app, resources={r"/mensaje": {"origins": list(config.CORS_ALLOWED_ORIGINS)}}, supports_credentials=True)
 
-# --- CORRECCIÓN DE SINTAXIS ---
 REINICIO_KEYWORDS = ['empezar', 'iniciar', 'volver', 'atras', 'reinicio', 'inicio', 'menu', 'reset']
-
 ESTADO_HANDLERS = {
     'esperando_eleccion_inicial': handlers.handle_eleccion_inicial,
     'pidiendo_nombre': handlers.handle_peticion_nombre,
@@ -33,23 +45,17 @@ ESTADO_HANDLERS = {
 
 @app.route("/mensaje", methods=["POST"])
 def mensaje():
-    print(f"--- DEBUG: URL COMPLETA RECIBIDA POR EL BACKEND: {request.url} ---")
-    
     negocio = None
     slug_negocio_url = request.args.get("business")
     texto_usuario = request.json.get("mensaje", "").strip()
     texto_normalizado = utils.normalizar_texto(texto_usuario)
-    
     if slug_negocio_url:
         session.pop('estado', None)
         slug_limpio = slug_negocio_url.strip().lower()
         negocio = database.obtener_negocio_por_slug(slug_limpio)
-        if negocio:
-            session['negocio_id'] = negocio['id']
-    
+        if negocio: session['negocio_id'] = negocio['id']
     elif 'negocio_id' in session:
         negocio = database.obtener_negocio_por_id(session['negocio_id'])
-
     if not negocio:
         session.pop('estado', None)
         todos_los_negocios = database.listar_negocios()
@@ -57,15 +63,11 @@ def mensaje():
             primer_negocio_id = todos_los_negocios[0]['id']
             negocio = database.obtener_negocio_por_id(primer_negocio_id)
             session['negocio_id'] = primer_negocio_id
-
     if not negocio:
         return jsonify({"respuesta": "Error: No se pudo cargar ningún negocio válido."})
-
     session['business_slug'] = negocio['slug']
     session['negocio_nombre'] = negocio['nombre']
-    
     estado_actual = session.get('estado')
-
     if any(keyword in texto_normalizado for keyword in REINICIO_KEYWORDS):
         respuesta_dict = handlers.handle_bienvenida(texto_usuario)
     else:
@@ -74,16 +76,12 @@ def mensaje():
             respuesta_dict = handler_func(texto_usuario)
         else:
             respuesta_dict = handlers.handle_bienvenida(texto_usuario)
-
     if not respuesta_dict.get("respuesta"):
         respuesta_dict = {"respuesta": "Lo siento, no te he entendido."}
-    
     if 'nuevo_estado' in respuesta_dict:
         session['estado'] = respuesta_dict.pop('nuevo_estado')
-        
     return jsonify(respuesta_dict)
 
-# ... (el resto del archivo es idéntico)
 @app.route("/index.html")
 def servir_index():
     return send_from_directory(os.getcwd(), "index.html")
@@ -126,6 +124,16 @@ def debug_negocios():
     for negocio in todos_los_negocios: html_respuesta += f"<tr><td>{negocio['id']}</td><td>{negocio['nombre']}</td><td>{negocio['slug']}</td></tr>"
     html_respuesta += "</table>"
     return html_respuesta
+@app.route("/debug-citas/<int:negocio_id>")
+def debug_citas(negocio_id):
+    password_ingresada = request.args.get('password')
+    if password_ingresada != config.ADMIN_PASSWORD: return "Acceso denegado.", 403
+    todas_las_citas = database.obtener_todas_las_citas(negocio_id)
+    html_respuesta = f"<h1>Contenido Real de la Tabla 'citas' para Negocio ID: {negocio_id}</h1><table border='1'><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Teléfono</th></tr>"
+    for cita in todas_las_citas:
+        html_respuesta += f"<tr><td>{cita['fecha']}</td><td>{cita['hora']}</td><td>{cita['nombre_cliente']}</td><td>{cita['telefono']}</td></tr>"
+    html_respuesta += "</table>"
+    return html_respuesta
 @app.route("/admin/borrar/<int:negocio_id>", methods=["POST"])
 def borrar_negocio_ruta(negocio_id):
     password_ingresada = request.args.get('password')
@@ -160,6 +168,110 @@ def editar_negocio_ruta(negocio_id):
         return redirect(url_for('lista_negocios_ruta', password=password_ingresada))
     negocio_a_editar = database.obtener_negocio_por_id(negocio_id)
     return render_template('editar_negocio.html', negocio=negocio_a_editar, password=password_ingresada)
+@app.route("/admin/exportar_citas/<int:negocio_id>")
+def exportar_citas_csv(negocio_id):
+    password_ingresada = request.args.get('password')
+    if password_ingresada != config.ADMIN_PASSWORD:
+        return "Acceso denegado.", 403
+    hoy = datetime.now()
+    inicio_mes = hoy.replace(day=1).date()
+    fin_mes_temp = (hoy.replace(day=28) + timedelta(days=4)).replace(day=1)
+    fin_mes = (fin_mes_temp - timedelta(days=1)).date()
+    citas = database.obtener_citas_para_exportar(negocio_id, inicio_mes, fin_mes)
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';') 
+    writer.writerow(['Fecha', 'Hora', 'Cliente', 'Telefono', 'Servicio', 'Profesional', 'Precio'])
+    for cita in citas:
+        hora_formateada = cita['hora'].strftime('%H:%M') if cita['hora'] else ''
+        writer.writerow([
+            cita['fecha'], hora_formateada, cita['nombre_cliente'], cita['telefono'],
+            cita['servicio_nombre'], cita['empleado_nombre'] or 'No asignado', cita['precio']
+        ])
+    csv_final = output.getvalue().encode('utf-8-sig')
+    return Response(
+        csv_final,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment;filename=citas_{negocio_id}_{hoy.strftime('%Y-%m')}.csv"}
+    )
+@app.route("/cliente/panel/<int:negocio_id>")
+def panel_cliente(negocio_id):
+    negocio = database.obtener_negocio_por_id(negocio_id)
+    if not negocio:
+        return "Negocio no encontrado", 404
+    
+    fecha_str = request.args.get('fecha', default=date.today().isoformat())
+    try:
+        fecha_obj = date.fromisoformat(fecha_str)
+    except ValueError:
+        fecha_obj = date.today()
+
+    horas_jornada = handlers._get_horas_jornada_para_dia(fecha_obj.weekday(), negocio_id=negocio_id)
+    citas_del_dia = database.obtener_citas_del_dia(negocio_id, fecha_obj)
+    mapa_citas = {cita['hora'].strftime('%H:%M'): cita for cita in citas_del_dia}
+
+    agenda_completa = []
+    for hora in horas_jornada:
+        if hora in mapa_citas:
+            agenda_completa.append({ 'hora': hora, 'status': 'ocupada', 'cita': mapa_citas[hora] })
+        else:
+            agenda_completa.append({ 'hora': hora, 'status': 'disponible', 'cita': None })
+    
+    return render_template('cliente_panel.html', 
+                           negocio=negocio, 
+                           agenda=agenda_completa, 
+                           fecha_seleccionada=fecha_obj,
+                           ADMIN_PASSWORD=config.ADMIN_PASSWORD)
+@app.route("/cliente/citas/cancelar/<int:cita_id>/<int:negocio_id>", methods=["POST"])
+def cliente_cancelar_cita(cita_id, negocio_id):
+    try:
+        database.cancelar_cita_cliente(cita_id, negocio_id)
+        flash("La cita ha sido cancelada con éxito.", "success")
+    except Exception as e:
+        print(f"Error al cancelar cita desde panel cliente: {e}")
+        flash("Hubo un error al intentar cancelar la cita.", "error")
+    
+    fecha_a_redirigir = request.form.get('fecha_actual', date.today().isoformat())
+    return redirect(url_for('panel_cliente', negocio_id=negocio_id, fecha=fecha_a_redirigir))
+@app.route("/cliente/panel/<int:negocio_id>/disponibilidad", methods=['GET', 'POST'])
+def gestion_disponibilidad(negocio_id):
+    negocio = database.obtener_negocio_por_id(negocio_id)
+    if not negocio:
+        return "Negocio no encontrado", 404
+    fecha_str = request.args.get('fecha', default=date.today().isoformat())
+    try:
+        fecha_obj = date.fromisoformat(fecha_str)
+    except ValueError:
+        fecha_obj = date.today()
+    if request.method == 'POST':
+        horas_bloqueadas_form = request.form.getlist('horas_bloqueadas')
+        horas_jornada = handlers._get_horas_jornada_para_dia(fecha_obj.weekday(), negocio_id=negocio_id)
+        
+        for hora in horas_jornada:
+            database.eliminar_bloqueo(negocio_id, fecha_obj, hora)
+        for hora_str in horas_bloqueadas_form:
+            database.crear_bloqueo(negocio_id, fecha_obj, hora_str)
+        
+        flash('Disponibilidad actualizada correctamente.', 'success')
+        return redirect(url_for('gestion_disponibilidad', negocio_id=negocio_id, fecha=fecha_obj.isoformat()))
+    horas_jornada = handlers._get_horas_jornada_para_dia(fecha_obj.weekday(), negocio_id=negocio_id)
+    citas_del_dia = database.obtener_citas_del_dia(negocio_id, fecha_obj)
+    bloqueos_del_dia = database.obtener_horas_bloqueadas(negocio_id, fecha_obj)
+    horas_ocupadas = {cita['hora'].strftime('%H:%M') for cita in citas_del_dia}
+    horas_bloqueadas = {bloqueo['hora'].strftime('%H:%M') for bloqueo in bloqueos_del_dia}
+    
+    estado_horas = []
+    for hora in horas_jornada:
+        status = 'disponible'
+        if hora in horas_ocupadas:
+            status = 'ocupada'
+        elif hora in horas_bloqueadas:
+            status = 'bloqueada'
+        estado_horas.append({'hora': hora, 'status': status})
+    return render_template('disponibilidad.html',
+                           negocio=negocio,
+                           fecha_seleccionada=fecha_obj,
+                           estado_horas=estado_horas)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=config.FLASK_PORT, debug=True)

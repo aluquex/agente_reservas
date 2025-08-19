@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>💈 Demo — Asistente para Peluquerías & Barberías</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>💈 Tu Asistente de Citas IA — Automatiza tus Reservas 24/7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg:#000; --card:#0f0f0f; --text:#fff; --muted:#cfcfcf;
@@ -15,11 +17,10 @@
     html,body{height:100%}
     body{
       margin:0;background:var(--bg);color:var(--text);
-      font-family:"Cormorant Garamond",ui-serif,Georgia,"Times New Roman",serif;
+      font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       display:flex;flex-direction:column;align-items:center;min-height:100svh;
+      font-size: 16px;
     }
-
-    /* Fallback container centered */
     header{
       width:100%;display:flex;justify-content:center;align-items:center;padding:20px 16px;
       animation:fadeIn .8s ease both;
@@ -29,8 +30,6 @@
       display:flex;gap:10px;align-items:center;text-align:center;
     }
     h1::before{content:"💈";filter:drop-shadow(0 0 6px var(--ring))}
-
-    /* Cards */
     .card{
       background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:24px;
       box-shadow:0 10px 28px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06) inset;
@@ -41,16 +40,15 @@
       padding:6px 10px;border-radius:999px;font-weight:600;font-size:13px;margin-bottom:10px
     }
     .title{font-size:clamp(22px,2.6vw,32px);margin:0 0 10px;text-align:center;}
-    .subtitle{font-size:clamp(15px,2vw,18px);color:var(--muted);margin:0 0 18px;line-height:1.55;text-align:center;}
-    ul{margin:0 0 18px 18px;padding:0;color:var(--muted)}
-    li{margin:.45rem 0} li::marker{color:var(--ok)}
-
+    .subtitle{font-size:clamp(15px,2vw,18px);color:var(--muted);margin:0 0 18px;line-height:1.6;text-align:center;}
+    ul{margin:0 0 24px 20px;padding:0;color:var(--muted); line-height: 1.7;}
+    li{margin:.6rem 0} li::marker{color:var(--ok)}
+    strong { color: var(--text); font-weight: 600; }
     .cta{display:flex;justify-content:center;margin-top:14px}
-
-    /* Primary button with hover effect */
     .btn{
-      padding:12px 18px;border-radius:16px;border:1px solid var(--gold);
+      padding:14px 22px;border-radius:16px;border:1px solid var(--gold);
       background:linear-gradient(180deg,var(--gold),var(--gold)); color:#161616;
+      font-family: inherit; font-size: 17px;
       font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;
       transition:transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, filter .15s ease;
       box-shadow:0 8px 22px rgba(212,175,55,.15);
@@ -63,16 +61,14 @@
       filter:brightness(1.02);
     }
     .btn:active{transform:translateY(0) scale(1.0);box-shadow:0 8px 22px rgba(212,175,55,.18)}
-
-    /* Comparativa */
     .block-title{margin:0 0 8px;text-align:center;font-size:clamp(20px,2.4vw,28px)}
     .block-sub{color:var(--muted);text-align:center;margin:0 0 14px;font-size:clamp(14px,1.9vw,18px)}
     .table-wrap{
       width:100%; overflow:auto; border:1px solid rgba(255,255,255,.08);
-      border-radius:12px; /* corner rounding keeps on overflow with wrapper */
+      border-radius:12px;
     }
     table{
-      width:100%; border-collapse:collapse; min-width:540px; /* scrolls on very small screens */
+      width:100%; border-collapse:collapse; min-width:540px;
       background:#111;
     }
     th,td{padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left}
@@ -80,7 +76,6 @@
     tr:last-child td{border-bottom:none}
     .save{color:#17c964; font-weight:700}
     .note{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
-
     footer{
       width:100%;display:flex;justify-content:center;align-items:center;
       padding:24px 12px;margin-top:6px; animation:fadeIn .9s ease .08s both;
@@ -89,14 +84,10 @@
       text-align:center; max-width:1100px; width:100%; color:#e6e6e6;
       font-size:clamp(14px,1.8vw,18px); opacity:.92;
     }
-
-    /* Fade-in */
     @keyframes fadeIn{
       from{opacity:0; transform:translateY(14px)}
       to{opacity:1; transform:translateY(0)}
     }
-
-    /* Mobile tweaks */
     @media (max-width:560px){
       .card{padding:18px}
       ul{margin-left:16px}
@@ -105,71 +96,93 @@
 </head>
 <body>
   <header>
-    <h1>Asistente Virtual — Peluquerías & Barberías</h1>
+    <h1>Tu Asistente de Citas con IA</h1>
   </header>
 
-  <!-- Hero / Intro -->
   <section class="card" role="region" aria-label="Introducción">
-    <span class="badge">Demo interactiva</span>
-    <h2 class="title">Convierte visitas de Instagram en <u>citas confirmadas</u></h2>
+    <span class="badge">Disponible 24/7 para tus clientes</span>
+    <h2 class="title">Deja de Perder Citas y Ahorra Tiempo</h2>
     <p class="subtitle">
-      Tu asistente 24/7. Sin apps externas: funciona en
-      <strong>Instagram, WhatsApp y tu web</strong>. Es <strong>tuyo</strong>, 100% personalizado y sin cuotas mensuales.
+      Te instalamos un asistente virtual que agenda por ti, directamente desde tu <strong>Instagram, WhatsApp o página web.</strong>
+      Sin que tus clientes necesiten descargar apps.
     </p>
 
     <ul>
-      <li>✅ <strong>Sin apps</strong>: el cliente no descarga nada; reserva en segundos.</li>
-      <li>✅ <strong>Integrado en tu</strong>: IG, WhatsApp o web con tu branding.</li>
-      <li>✅ <strong>Bloqueo de citas duplicadas</strong> por teléfono.</li>
-      <li>✅ <strong>Recordatorios por email</strong> y calendario.</li>
-      <li>✅ <strong>Historial de clientes</strong> para trato cercano.</li>
+      <li><strong>No más interrupciones:</strong> El bot agenda por ti mientras te concentras en tus clientes.</li>
+      <li><strong>Citas a cualquier hora:</strong> Captura a los clientes que deciden reservar fuera de tu horario laboral.</li>
+      <li><strong>Imagen profesional:</strong> Ofrece una experiencia moderna que te diferencia de la competencia.</li>
+      <!-- APUNTE 2: Explicamos el Panel de Control -->
+      <li><strong>Panel de Control privado:</strong> Te entregamos un panel para ver tu agenda en tiempo real, <strong>exportar tus citas</strong> y gestionar tu disponibilidad.</li>
+      <li><strong>Tú tienes el control:</strong> El sistema es 100% tuyo, sin comisiones por reserva ni cuotas mensuales.</li>
     </ul>
 
     <div class="cta">
-      <a class="btn" id="cta-demo" href="index.html?business=hair_salon">Probar el asistente ahora →</a>
+      <a class="btn" id="cta-demo" href="index.html">Ver Demo en Vivo →</a>
     </div>
   </section>
 
-  <!-- Comparativa -->
+  <section class="card" role="region" aria-label="Cómo funciona">
+      <h3 class="block-title">Tan fácil como contar hasta 3</h3>
+      <p class="block-sub" style="max-width: 600px; margin: 0 auto 20px;">Nos encargamos de toda la configuración técnica para que puedas empezar a recibir citas lo antes posible.</p>
+      <ol>
+          <li><strong>Te entregamos tu URL Mágica única.</strong></li>
+          <li><strong>La colocas en tu perfil de Instagram o WhatsApp.</strong></li>
+          <li><strong>Empiezas a recibir citas confirmadas en tu panel. ¡Así de simple!</strong></li>
+      </ol>
+  </section>
+
   <section class="card" id="comparativa" role="region" aria-label="Comparativa de costes">
-    <h3 class="block-title">💸 Ahorro Real frente a Booksy</h3>
-    <p class="block-sub">Modelo simple: <strong>199 € pago único</strong> + <strong>100 € de renovación anual</strong>. Sin cuotas mensuales.</p>
+    <h3 class="block-title">💸 Ahorra Cientos de Euros al Año</h3>
+    <p class="block-sub">Un pago único y una pequeña cuota anual de mantenimiento. Sin sorpresas.</p>
 
     <div class="table-wrap">
       <table aria-label="Tabla comparativa de costes">
         <thead>
-          <tr><th></th><th>Chatbot Sialweb</th><th>Booksy</th></tr>
+          <tr><th></th><th>Tu Asistente IA</th><th>Apps (Booksy, etc.)</th></tr>
         </thead>
         <tbody>
           <tr><td><strong>Precio inicial</strong></td><td>199 € (pago único)</td><td>0 €</td></tr>
-          <tr><td><strong>Cuota mensual</strong></td><td><strong>0 €/mes</strong></td><td>34,99 €/mes</td></tr>
+          <tr><td><strong>Cuota mensual</strong></td><td><strong>0 €/mes</strong></td><td>~35 €/mes</td></tr>
           <tr><td><strong>Renovación anual</strong></td><td>100 € / año</td><td>—</td></tr>
-          <tr><td><strong>Coste 1er año</strong></td><td><strong>299 €</strong></td><td>419,88 €</td></tr>
-          <tr><td><strong>Ahorro 1er año</strong></td><td class="save">💰 120,88 € menos</td><td>—</td></tr>
-          <tr><td><strong>Coste 2º año</strong></td><td><strong>100 €</strong></td><td>419,88 €</td></tr>
-          <tr><td><strong>Ahorro 2º año</strong></td><td class="save">💰 319,88 € menos</td><td>—</td></tr>
-          <tr><td><strong>Coste 3 años</strong></td><td><strong>399 €</strong> (total)</td><td>1.259,64 €</td></tr>
-          <tr><td><strong>Ahorro total 3 años</strong></td><td class="save">💰 860,64 € menos</td><td>—</td></tr>
+          <tr><td><strong>Coste 1er año</strong></td><td><strong>299 €</strong></td><td>~420 €</td></tr>
+          <tr><td><strong>Ahorro 1er año</strong></td><td class="save">💰 Ahorras ~121 €</td><td>—</td></tr>
+          <tr><td><strong>Coste 3 años</strong></td><td><strong>499 €</strong> (total)</td><td>~1260 €</td></tr>
+          <tr><td><strong>Ahorro total 3 años</strong></td><td class="save">💰 Ahorras más de 760 €</td><td>—</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="note">*Cálculos con 34,99 €/mes en Booksy (12 meses = 419,88 €/año).</div>
+    <div class="note">*Cálculos basados en una cuota media de 34,99 €/mes.</div>
+  </section>
+  
+  <section class="card" role="region" aria-label="Contacto">
+      <h3 class="block-title">¿Listo para Automatizar tu Agenda?</h3>
+      <p class="block-sub">Hablemos sin compromiso. Te resolvemos cualquier duda y te mostramos cómo se adaptaría a tu negocio.</p>
+      <div class="cta">
+          <a class="btn" href="https://wa.me/34600222333" target="_blank">Contactar por WhatsApp</a>
+      </div>
   </section>
 
   <footer>
-    <div class="foot">© SialWeb — Integra tu asistente en Instagram, WhatsApp o tu web y convierte visitas en reservas.</div>
+    <div class="foot">© SialWeb — Tu Asistente de Citas Inteligente. Todos los derechos reservados.</div>
   </footer>
 
   <script>
-    // Garantiza el parámetro de negocio en el CTA
-    const withBiz = (url) => url.includes('business=') ? url : (url + (url.includes('?')?'&':'?') + 'business=hair_salon');
-    const cta = document.getElementById('cta-demo');
-    cta.href = withBiz(cta.href);
+    document.addEventListener('DOMContentLoaded', () => {
+      const ctaButton = document.getElementById('cta-demo');
+      if (ctaButton) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const demoSlug = urlParams.get('demo');
+        
+        // APUNTE 1: El slug por defecto ahora es 'demo'
+        let finalDemoSlug = 'demo'; 
 
-    // Guarda el sector (por si lo lees desde el chat)
-    sessionStorage.setItem('business', 'hair_salon');
+        if (demoSlug) {
+          finalDemoSlug = demoSlug;
+        }
+
+        ctaButton.href = `index.html?business=${finalDemoSlug}`;
+      }
+    });
   </script>
 </body>
 </html>
-
-
