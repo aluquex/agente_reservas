@@ -6,7 +6,7 @@ print("Iniciando la inicialización de la base de datos...")
 
 try:
     # Usamos la configuración de config.py para conectar
-    print("Conectando a la base de datos PostgreSQL...")
+    print(f"Conectando a la base de datos en: {config.DB_HOST}...")
     conn = psycopg2.connect(
         host=config.DB_HOST,
         database=config.DB_NAME,
@@ -17,7 +17,6 @@ try:
     cur = conn.cursor()
     print("Conexión exitosa.")
 
-    # --- BORRADO DE TABLAS EXISTENTES (para un inicio limpio) ---
     print("Eliminando tablas antiguas si existen...")
     cur.execute("DROP TABLE IF EXISTS bloqueos CASCADE;")
     cur.execute("DROP TABLE IF EXISTS citas CASCADE;")
@@ -26,7 +25,6 @@ try:
     cur.execute("DROP TABLE IF EXISTS negocios CASCADE;")
     print("Tablas eliminadas.")
 
-    # --- CREACIÓN DE LA TABLA 'negocios' ---
     print("Creando la tabla 'negocios'...")
     cur.execute("""
         CREATE TABLE negocios (
@@ -46,7 +44,6 @@ try:
         );
     """)
 
-    # --- CREACIÓN DE LA TABLA 'servicios' ---
     print("Creando la tabla 'servicios'...")
     cur.execute("""
         CREATE TABLE servicios (
@@ -54,11 +51,10 @@ try:
             negocio_id INTEGER NOT NULL REFERENCES negocios(id) ON DELETE CASCADE,
             nombre VARCHAR(255) NOT NULL,
             precio NUMERIC(10, 2) NOT NULL,
-            duracion INTEGER NOT NULL -- Duración en minutos
+            duracion INTEGER NOT NULL
         );
     """)
 
-    # --- CREACIÓN DE LA TABLA 'empleados' ---
     print("Creando la tabla 'empleados'...")
     cur.execute("""
         CREATE TABLE empleados (
@@ -67,8 +63,7 @@ try:
             nombre VARCHAR(255) NOT NULL
         );
     """)
-
-    # --- CREACIÓN DE LA TABLA 'citas' ---
+    
     print("Creando la tabla 'citas'...")
     cur.execute("""
         CREATE TABLE citas (
@@ -84,7 +79,6 @@ try:
         );
     """)
 
-    # --- CREACIÓN DE LA TABLA 'bloqueos' ---
     print("Creando la tabla 'bloqueos'...")
     cur.execute("""
         CREATE TABLE bloqueos (
@@ -98,10 +92,7 @@ try:
     """)
     print("Todas las tablas han sido creadas con éxito.")
 
-    # --- INSERCIÓN DE DATOS DE EJEMPLO ---
     print("Insertando datos de ejemplo...")
-
-    # Negocio 1: Peluquería Samuel T (Cliente real de ejemplo)
     cur.execute(
         "INSERT INTO negocios (nombre, slug, horario_viernes, horario_sabado) VALUES (%s, %s, %s, %s) RETURNING id;",
         ("Peluqueria Samuel T", "ST", "09:00,10:00,11:00,12:00,16:00,17:00,18:00", "09:00,10:00,11:00,12:00")
@@ -112,7 +103,6 @@ try:
     cur.execute("INSERT INTO empleados (negocio_id, nombre) VALUES (%s, %s);", (samuel_id, 'Samuel'))
     cur.execute("INSERT INTO empleados (negocio_id, nombre) VALUES (%s, %s);", (samuel_id, 'Laura'))
 
-    # Negocio 2: DC Barber (Cliente real de ejemplo)
     cur.execute(
         "INSERT INTO negocios (nombre, slug, horario_lunes, horario_martes) VALUES (%s, %s, %s, %s) RETURNING id;",
         ("DC Barber", "DCB", "10:00,11:00,12:00", "10:00,11:00,12:00,17:00,18:00")
@@ -122,7 +112,6 @@ try:
     cur.execute("INSERT INTO servicios (negocio_id, nombre, precio, duracion) VALUES (%s, %s, %s, %s);", (dc_id, 'Arreglo de Barba', 10.00, 15))
     cur.execute("INSERT INTO empleados (negocio_id, nombre) VALUES (%s, %s);", (dc_id, 'Daniel'))
 
-    # Negocio 3: Demo Pública (Para la Landing Page)
     cur.execute(
         "INSERT INTO negocios (nombre, slug, horario_lunes, horario_martes, horario_miercoles, horario_jueves, horario_viernes) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;",
         ("Peluquería SialWeb (Demo)", "demo", "09:00,10:00,11:00,12:00", "09:00,10:00,11:00,12:00", "09:00,10:00,11:00,12:00", "09:00,10:00,11:00,12:00", "09:00,10:00,11:00,12:00")
@@ -131,10 +120,8 @@ try:
     cur.execute("INSERT INTO servicios (negocio_id, nombre, precio, duracion) VALUES (%s, %s, %s, %s);", (demo_id, 'Corte de Demostración', 10.00, 20))
     cur.execute("INSERT INTO servicios (negocio_id, nombre, precio, duracion) VALUES (%s, %s, %s, %s);", (demo_id, 'Peinado de Exhibición', 15.00, 30))
     cur.execute("INSERT INTO empleados (negocio_id, nombre) VALUES (%s, %s);", (demo_id, 'Alex (IA)'))
-
     print("Datos de ejemplo insertados.")
 
-    # Guardar los cambios en la base de datos
     conn.commit()
     print("Cambios guardados en la base de datos.")
 
@@ -142,7 +129,6 @@ except Exception as e:
     print(f"Ha ocurrido un error: {e}")
 
 finally:
-    # Cerrar la comunicación con la base de datos
     if 'cur' in locals() and cur:
         cur.close()
     if 'conn' in locals() and conn:
