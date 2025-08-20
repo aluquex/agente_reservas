@@ -1,21 +1,24 @@
 # config.py
 import os
-from urllib.parse import urlparse
+import dj_database_url
+from dotenv import load_dotenv
+
+# Carga las variables del archivo .env si existe (para desarrollo local)
+load_dotenv()
 
 # Prioridad 1: Usar la URL de la base de datos que Railway inyecta
 database_url = os.getenv("DATABASE_URL")
 
 if database_url:
-    # Si estamos en producción (Railway), parseamos la URL para obtener las credenciales
-    result = urlparse(database_url)
-    DB_USER = result.username
-    DB_PASSWORD = result.password
-    DB_HOST = result.hostname
-    DB_PORT = result.port
-    DB_NAME = result.path[1:]
+    # dj_database_url parsea la URL y devuelve un diccionario con todas las claves
+    db_config = dj_database_url.config(default=database_url)
+    DB_USER = db_config.get('USER')
+    DB_PASSWORD = db_config.get('PASSWORD')
+    DB_HOST = db_config.get('HOST')
+    DB_PORT = db_config.get('PORT')
+    DB_NAME = db_config.get('NAME')
 else:
-    # Prioridad 2: Si no hay DATABASE_URL, leemos las variables individuales
-    # Esto es útil si en el futuro usamos otro proveedor que no inyecte la URL completa
+    # Prioridad 2: Si no hay DATABASE_URL, usamos los valores locales
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_NAME = os.getenv("DB_NAME", "chatbot_sialweb_local")
     DB_USER = os.getenv("DB_USER", "postgres")
