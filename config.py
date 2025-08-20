@@ -1,29 +1,39 @@
 # config.py
 import os
 
-# --- CREDENCIALES PARA PRODUCCIÓN (RAILWAY) ---
-# Leemos las variables de entorno si existen, si no, usamos estos valores.
-# En Railway configuraremos las variables de entorno para máxima seguridad.
-
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "30980161Nn*")
 
-# Extraído de tu URL de conexión de Railway:
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "vjUlXFDHMuNbLgrnMLgdGkuEzuRKfJSx")
-DB_HOST = os.getenv("DB_HOST", "hopper.proxy.rlwy.net")
-DB_PORT = int(os.getenv("DB_PORT", 37375))
-DB_NAME = os.getenv("DB_NAME", "railway")
+# --- LÓGICA ROBUSTA PARA LEER LAS VARIABLES DE RAILWAY ---
+# Leemos las variables de la URL de conexión que Railway sí proporciona de forma fiable
+database_url = os.getenv("DATABASE_URL")
+
+if database_url:
+    # Si estamos en producción, parseamos la URL
+    from urllib.parse import urlparse
+    result = urlparse(database_url)
+    DB_USER = result.username
+    DB_PASSWORD = result.password
+    DB_HOST = result.hostname
+    DB_PORT = result.port
+    DB_NAME = result.path[1:] # Quitamos la barra inicial '/'
+else:
+    # Si estamos en local, usamos nuestros valores por defecto
+    DB_HOST = "localhost"
+    DB_NAME = "chatbot_sialweb_local"
+    DB_USER = "postgres"
+    DB_PASSWORD = "30980161Nn*"
+    DB_PORT = 5432
 
 # La SECRET_KEY es vital para la seguridad de las sesiones en producción
 SECRET_KEY = os.getenv("SECRET_KEY", "una-clave-secreta-muy-larga-y-dificil-de-adivinar-para-produccion")
 
-# Railway asignará el puerto dinámicamente, por eso leemos la variable de entorno 'PORT'
+# Railway asignará el puerto dinámicamente
 FLASK_PORT = int(os.getenv("PORT", 5001))
 
-# Orígenes permitidos para CORS. Cuando subamos a Hostinger, añadiremos tu dominio.
+# Orígenes permitidos para CORS
 CORS_ALLOWED_ORIGINS = {
     "http://127.0.0.1:52370", 
     "http://localhost:52370",
-    "https://chatbot.sialweb.com", # ¡Añadimos tu subdominio de producción!
+    "https://chatbot.sialweb.com",
     "http://chatbot.sialweb.com"
 }
