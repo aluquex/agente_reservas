@@ -111,7 +111,6 @@
       <li><strong>No más interrupciones:</strong> El bot agenda por ti mientras te concentras en tus clientes.</li>
       <li><strong>Citas a cualquier hora:</strong> Captura a los clientes que deciden reservar fuera de tu horario laboral.</li>
       <li><strong>Imagen profesional:</strong> Ofrece una experiencia moderna que te diferencia de la competencia.</li>
-      <!-- APUNTE 2: Explicamos el Panel de Control -->
       <li><strong>Panel de Control privado:</strong> Te entregamos un panel para ver tu agenda en tiempo real, <strong>exportar tus citas</strong> y gestionar tu disponibilidad.</li>
       <li><strong>Tú tienes el control:</strong> El sistema es 100% tuyo, sin comisiones por reserva ni cuotas mensuales.</li>
     </ul>
@@ -172,15 +171,13 @@
       if (ctaButton) {
         const urlParams = new URLSearchParams(window.location.search);
         const demoSlug = urlParams.get('demo');
-        
-        // APUNTE 1: El slug por defecto ahora es 'demo'
         let finalDemoSlug = 'demo'; 
-
         if (demoSlug) {
           finalDemoSlug = demoSlug;
         }
 
-        ctaButton.href = `index.html?business=${finalDemoSlug}`;
+        const frontendBaseUrl = 'https://chatbot.sialweb.com/index.html';
+        ctaButton.href = `${frontendBaseUrl}?business=${finalDemoSlug}`;
       }
     });
   </script>

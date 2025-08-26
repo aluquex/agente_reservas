@@ -1,0 +1,8 @@
+{% extends "base_email.html" %}
+{% block content %}
+<h2>❌ Tu cita ha sido cancelada</h2>
+<p class="row"><span class="label">Cliente:</span> <span class="val">{{ cliente_nombre }}</span></p>
+<p class="row"><span class="label">Servicio:</span> <span class="val">{{ servicio }}</span></p>
+<p class="row"><span class="label">Fecha cancelada:</span> <span class="val">{{ fecha_legible }} a las {{ hora }}</span></p>
+<p style="margin-top:16px">Si necesitas reservar otra hora, puedes hacerlo desde nuestra web o respondiendo a este email.</p>
+{% endblock %}

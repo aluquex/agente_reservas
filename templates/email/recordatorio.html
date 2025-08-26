@@ -1,0 +1,12 @@
+{% extends "base_email.html" %}
+{% block content %}
+<h2 style="color:#F2D17B;margin:0 0 12px 0;">⏰ Recordatorio de tu cita</h2>
+<p style="margin:6px 0;color:#EEEEEE;"><strong>Cliente:</strong> {{ cliente_nombre }}</p>
+<p style="margin:6px 0;color:#EEEEEE;"><strong>Servicio:</strong> {{ servicio }}</p>
+<p style="margin:6px 0;color:#EEEEEE;"><strong>Profesional:</strong> {{ empleado_nombre }}</p>
+<p style="margin:6px 0 14px 0;color:#EEEEEE;"><strong>Hoy:</strong> {{ fecha_legible }} a las {{ hora }}</p>
+{% if direccion %}
+<p style="margin:6px 0;color:#EEEEEE;"><strong>Dónde:</strong> {{ direccion }}</p>
+{% endif %}
+<p style="margin-top:16px;color:#BFBFBF;">Te esperamos. Si no puedes asistir, responde a este correo para reprogramar.</p>
+{% endblock %}

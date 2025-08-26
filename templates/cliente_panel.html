@@ -1,100 +1,211 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control — {{ negocio.nombre }}</title>
-    <!-- --- CAMBIO DE FUENTE --- -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root { --bg: #000; --text: #fff; --muted: #d6d6d6; --gold: #d4af37; --card: #0f0f0f; --red: #dc3545; --red-hover: #b02a37; }
-        /* --- CAMBIO DE FUENTE --- */
-        body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 16px; }
-        .container { max-width: 900px; margin: auto; background: var(--card); padding: 20px 30px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
-        h1, h2 { color: var(--gold); border-bottom: 1px solid rgba(255, 255, 255, .08); padding-bottom: 15px; letter-spacing: .5px; }
-        h1 small { color: var(--muted); font-size: 16px; font-weight: normal; }
-        .header-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
-        .citas-tabla { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .citas-tabla th, .citas-tabla td { padding: 12px 15px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, .08); }
-        .citas-tabla th { font-size: 14px; color: var(--muted); text-transform: uppercase; }
-        .citas-tabla tr:last-child td { border-bottom: none; }
-        .no-citas { padding: 40px; text-align: center; color: var(--muted); }
-        .btn { text-decoration: none; display: inline-block; text-align: center; padding: 8px 14px; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background .2s, border-color .2s; border: 1px solid transparent; font-family: inherit; }
-        .btn-primary { background: var(--gold); color: #151515; border-color: var(--gold); }
-        .btn-primary:hover { background: var(--gold-2); border-color: var(--gold-2); }
-        .btn-secondary { background: #333; color: var(--text); border-color: #555; }
-        .btn-secondary:hover { background: #444; border-color: #666; }
-        .btn-danger { background: var(--red); color: white; border-color: var(--red); }
-        .btn-danger:hover { background: var(--red-hover); border-color: var(--red-hover); }
-        .flash { padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid transparent; }
-        .flash.success { background-color: rgba(212, 175, 55, .1); color: var(--gold); border-color: rgba(212, 175, 55, .3); }
-        .flash.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
-        .date-picker { margin: 20px 0; display: flex; align-items: center; gap: 15px; }
-        .date-picker input[type="date"] { background: #0e0e0e; color: var(--text); padding: 8px 12px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px; font-size: 16px; font-family: inherit; color-scheme: dark; }
-        .disponible { color: #555; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel de Control — {{ negocio.nombre }}</title>
+
+  <!-- Fuente -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root{
+      --bg:#000; --text:#fff; --muted:#d6d6d6;
+      --gold:#d4af37; --gold-2:#c49b1b;
+      --card:#0f0f0f; --red:#dc3545; --red-hover:#b02a37;
+    }
+    body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:20px;font-size:16px}
+    .container{max-width:1000px;margin:auto;background:var(--card);padding:20px 30px;border-radius:18px;border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+    h1,h2{color:var(--gold);border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:15px;letter-spacing:.5px}
+    h1 small{color:var(--muted);font-size:16px;font-weight:normal}
+    .header-actions{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .toolbar .btn{height:36px}
+    .date-picker{margin:20px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .date-picker input[type="date"], .filters select{background:#0e0e0e;color:var(--text);padding:8px 12px;border:1px solid rgba(255,255,255,.14);border-radius:12px;font-size:16px;font-family:inherit;color-scheme:dark}
+    .filters select{border-radius:10px}
+    .btn{text-decoration:none;display:inline-block;text-align:center;padding:8px 14px;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;transition:background .2s,border-color .2s;border:1px solid transparent;font-family:inherit}
+    .btn-primary{background:var(--gold);color:#151515;border-color:var(--gold)}
+    .btn-primary:hover{background:var(--gold-2);border-color:var(--gold-2)}
+    .btn-secondary{background:#333;color:var(--text);border-color:#555}
+    .btn-secondary:hover{background:#444;border-color:#666}
+    .btn-danger{background:var(--red);color:#fff;border-color:var(--red)}
+    .btn-danger:hover{background:var(--red-hover);border-color:var(--red-hover)}
+    .citas-tabla{width:100%;border-collapse:collapse;margin-top:20px}
+    .citas-tabla th,.citas-tabla td{padding:12px 15px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08)}
+    .citas-tabla th{font-size:14px;color:var(--muted);text-transform:uppercase;position:sticky;top:0;background:var(--card);z-index:1}
+    .citas-tabla tr:last-child td{border-bottom:none}
+    .no-citas{padding:40px;text-align:center;color:var(--muted)}
+    .flash{padding:15px;border-radius:12px;margin-bottom:20px;border:1px solid transparent}
+    .flash.success{background-color:rgba(212,175,55,.1);color:var(--gold);border-color:rgba(212,175,55,.3)}
+    .flash.error{background-color:#f8d7da;color:#721c24;border-color:#f5c6cb}
+    .disponible{color:#777}
+    .muted{color:var(--muted);font-size:13px}
+    .stack{display:flex;flex-direction:column;gap:8px}
+    .stack-item{display:grid;grid-template-columns:1.2fr 1.2fr 1fr auto;gap:10px;align-items:center}
+    @media (max-width:720px){
+      .stack-item{grid-template-columns:1fr;gap:6px}
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header-actions">
-            <h1>Panel de Control <small>{{ negocio.nombre }}</small></h1>
-            <div>
-                <a href="{{ url_for('exportar_citas_csv', negocio_id=negocio.id, password=ADMIN_PASSWORD) }}" class="btn btn-secondary">Exportar Citas del Mes</a>
-                <a href="{{ url_for('gestion_disponibilidad', negocio_id=negocio.id) }}" class="btn btn-primary">Gestionar Disponibilidad</a>
-            </div>
-        </div>
+  <!-- Datos para JS -->
+  <div id="js-data"
+       data-negocio-id="{{ negocio.id }}"
+       data-panel-url="{{ url_for('panel_cliente', negocio_id=negocio.id) }}"
+       data-gestion-url="{{ url_for('gestion_disponibilidad', negocio_id=negocio.id) }}">
+  </div>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}{% for category, message in messages %}
-                <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}{% endif %}
-        {% endwith %}
-
-        <div class="date-picker">
-            <label for="fecha">Selecciona una fecha para ver la agenda:</label>
-            <input type="date" id="fecha" name="fecha" value="{{ fecha_seleccionada.isoformat() }}"
-                   onchange="window.location.href = `{{ url_for('panel_cliente', negocio_id=negocio.id) }}?fecha=${this.value}`;">
-        </div>
-
-        <h2>Agenda para el {{ fecha_seleccionada.strftime('%A, %d de %B de %Y') }}</h2>
-        
-        {% if agenda %}
-            <table class="citas-tabla">
-                <thead>
-                    <tr>
-                        <th>Hora</th>
-                        <th>Cliente</th>
-                        <th>Servicio</th>
-                        <th>Profesional</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for slot in agenda %}
-                    <tr>
-                        <td><strong>{{ slot.hora }}</strong></td>
-                        {% if slot.status == 'ocupada' %}
-                            <td>{{ slot.cita.nombre_cliente }}</td>
-                            <td>{{ slot.cita.servicio_nombre }}</td>
-                            <td>{{ slot.cita.empleado_nombre or 'No asignado' }}</td>
-                            <td>
-                                <form action="{{ url_for('cliente_cancelar_cita', cita_id=slot.cita.id, negocio_id=negocio.id) }}" method="post" onsubmit="return confirm('¿Seguro que quieres cancelar esta cita?');">
-                                    <input type="hidden" name="fecha_actual" value="{{ fecha_seleccionada.isoformat() }}">
-                                    <button type="submit" class="btn btn-danger">Cancelar</button>
-                                </form>
-                            </td>
-                        {% else %}
-                            <td colspan="4" class="disponible">-- Disponible --</td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p class="no-citas">Este día está cerrado o no tiene un horario definido.</p>
-        {% endif %}
+  <div class="container">
+    <div class="header-actions">
+      <h1>Panel de Control <small>{{ negocio.nombre }}</small></h1>
+      <div class="toolbar">
+        <a href="{{ url_for('exportar_citas_csv', negocio_id=negocio.id, password=ADMIN_PASSWORD) }}" class="btn btn-secondary">Exportar Citas del Mes</a>
+        <a href="{{ url_for('gestion_disponibilidad', negocio_id=negocio.id) }}" class="btn btn-primary">Gestionar Disponibilidad</a>
+      </div>
     </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}" aria-live="polite">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="date-picker">
+      <label for="fecha">Selecciona una fecha para ver la agenda:</label>
+      <input type="date" id="fecha" name="fecha" value="{{ fecha_seleccionada.isoformat() }}"/>
+      <button class="btn btn-secondary" id="btnHoy" type="button" title="Ir a hoy">Hoy</button>
+      <span class="muted">Actualizando cada 15 s…</span>
+    </div>
+
+    <div class="filters">
+      <label>Servicio:
+        <select id="filtroServicio"><option value="">Todos</option></select>
+      </label>
+      <label>Profesional:
+        <select id="filtroEmpleado"><option value="">Todos</option></select>
+      </label>
+    </div>
+
+    <h2>Agenda para el {{ fecha_seleccionada.strftime('%A, %d de %B de %Y') }}</h2>
+
+    {% if agenda %}
+      <table class="citas-tabla" id="tablaAgenda">
+        <thead>
+          <tr>
+            <th scope="col">Hora</th>
+            <th scope="col">Cliente</th>
+            <th scope="col">Servicio</th>
+            <th scope="col">Profesional</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for slot in agenda %}
+          <tr data-status="{{ 'ocupada' if (slot.citas and slot.citas|length>0) else 'disponible' }}">
+            <td><strong>{{ slot.hora }}</strong></td>
+
+            {% if slot.citas and slot.citas|length>0 %}
+              <!-- Varias citas en la misma hora -->
+              <td colspan="4">
+                <div class="stack">
+                  {% for cita in slot.citas %}
+                    <div class="stack-item"
+                         data-servicio="{{ cita.servicio_nombre }}"
+                         data-empleado="{{ cita.empleado_nombre or 'No asignado' }}">
+                      <div>{{ cita.nombre_cliente }}</div>
+                      <div>{{ cita.servicio_nombre }}</div>
+                      <div>{{ cita.empleado_nombre or 'No asignado' }}</div>
+                      <div>
+                        <form action="{{ url_for('cliente_cancelar_cita', cita_id=cita.id, negocio_id=negocio.id) }}"
+                              method="post"
+                              onsubmit="return confirm('¿Seguro que quieres cancelar esta cita?');">
+                          <input type="hidden" name="fecha_actual" value="{{ fecha_seleccionada.isoformat() }}"/>
+                          <button type="submit" class="btn btn-danger">Cancelar</button>
+                        </form>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </td>
+            {% else %}
+              <!-- Sin citas → disponible -->
+              <td colspan="4" class="disponible">-- Disponible --
+                <a class="btn btn-secondary" style="margin-left:8px"
+                   href="{{ url_for('gestion_disponibilidad', negocio_id=negocio.id) }}?fecha={{ fecha_seleccionada.isoformat() }}#slot-{{ slot.hora }}">
+                  Bloquear
+                </a>
+              </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="no-citas">Este día está cerrado o no tiene un horario definido.</p>
+    {% endif %}
+  </div>
+
+  <script>
+    (function(){
+      var dataNode = document.getElementById('js-data');
+      var panelBaseUrl = dataNode.getAttribute('data-panel-url') || '';
+
+      var inputFecha = document.getElementById('fecha');
+      var btnHoy = document.getElementById('btnHoy');
+      var filtroServicio = document.getElementById('filtroServicio');
+      var filtroEmpleado = document.getElementById('filtroEmpleado');
+      var tabla = document.getElementById('tablaAgenda');
+
+      inputFecha.addEventListener('change', function(){
+        var v = this.value;
+        if (v) window.location.href = panelBaseUrl + '?fecha=' + encodeURIComponent(v);
+      });
+
+      btnHoy.addEventListener('click', function(){
+        var tz = (new Date()).getTimezoneOffset()*60000;
+        var hoy = (new Date(Date.now()-tz)).toISOString().slice(0,10);
+        window.location.href = panelBaseUrl + '?fecha=' + hoy;
+      });
+
+      setInterval(function(){
+        if (document.visibilityState === 'visible') location.reload();
+      }, 15000);
+
+      // Filtros (a partir de las citas visibles)
+      function poblar(){
+        if (!tabla) return;
+        var servicios={}, empleados={};
+        tabla.querySelectorAll('.stack-item').forEach(function(row){
+          var s=row.getAttribute('data-servicio')||'';
+          var e=row.getAttribute('data-empleado')||'';
+          if(s) servicios[s]=true;
+          if(e) empleados[e]=true;
+        });
+        Object.keys(servicios).sort().forEach(function(s){
+          var o=document.createElement('option'); o.value=s;o.textContent=s; filtroServicio.appendChild(o);
+        });
+        Object.keys(empleados).sort().forEach(function(e){
+          var o=document.createElement('option'); o.value=e;o.textContent=e; filtroEmpleado.appendChild(o);
+        });
+      }
+      function aplicar(){
+        var fs=filtroServicio.value, fe=filtroEmpleado.value;
+        document.querySelectorAll('.stack-item').forEach(function(it){
+          var okS=!fs || it.getAttribute('data-servicio')===fs;
+          var okE=!fe || it.getAttribute('data-empleado')===fe;
+          it.style.display=(okS&&okE)?'grid':'none';
+        });
+      }
+      filtroServicio.addEventListener('change',aplicar);
+      filtroEmpleado.addEventListener('change',aplicar);
+      poblar();
+    })();
+  </script>
 </body>
 </html>

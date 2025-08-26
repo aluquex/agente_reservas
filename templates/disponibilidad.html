@@ -1,77 +1,129 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionar Disponibilidad — {{ negocio.nombre }}</title>
-    <!-- --- CAMBIO DE FUENTE --- -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root { --bg: #000; --text: #fff; --muted: #d6d6d6; --gold: #d4af37; --card: #0f0f0f; --ring: rgba(212, 175, 55, .35); }
-        /* --- CAMBIO DE FUENTE --- */
-        body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; font-size: 16px; }
-        .container { max-width: 900px; margin: auto; background: var(--card); padding: 20px 30px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
-        h1, h2 { color: var(--gold); border-bottom: 1px solid rgba(255, 255, 255, .08); padding-bottom: 15px; letter-spacing: .5px; }
-        .btn, button { text-decoration: none; display: inline-block; text-align: center; padding: 10px 18px; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background .2s, border-color .2s; border: 1px solid transparent; font-family: inherit; }
-        .btn-primary { background: var(--gold); color: #151515; border-color: var(--gold); }
-        .btn-primary:hover { background: var(--gold-2); border-color: var(--gold-2); }
-        .btn-secondary { background: #333; color: var(--text); border-color: #555; }
-        .flash { padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid transparent; }
-        .flash.success { background-color: rgba(212, 175, 55, .1); color: var(--gold); border-color: rgba(212, 175, 55, .3); }
-        .date-picker { margin: 20px 0; display: flex; align-items: center; gap: 15px; }
-        .date-picker input[type="date"] { background: #0e0e0e; color: var(--text); padding: 8px 12px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px; font-size: 16px; font-family: inherit; color-scheme: dark; }
-        .hours-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-        .hour-slot { padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #333; }
-        .hour-slot.disponible { background: #272727; cursor: pointer; }
-        .hour-slot.disponible:hover { border-color: var(--gold); }
-        .hour-slot.bloqueada { background: #5a3e00; color: #ffca6e; border-color: #896000; cursor: pointer; }
-        .hour-slot.ocupada { background: #3a1a20; color: #ffb8c3; border-color: #5c2a34; cursor: not-allowed; opacity: 0.6; }
-        .hour-slot input { display: none; }
-        .hour-slot.selected { background: var(--gold); color: #000; border-color: var(--gold-2); }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestionar Disponibilidad — {{ negocio.nombre }}</title>
+
+  <!-- Fuente -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root { --bg:#000; --text:#fff; --muted:#d6d6d6; --gold:#d4af37; --gold-2:#c49b1b; --card:#0f0f0f; --ring:rgba(212,175,55,.35); }
+    body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:20px;font-size:16px}
+    .container{max-width:1000px;margin:auto;background:var(--card);padding:20px 30px;border-radius:18px;border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+    h1,h2{color:var(--gold);border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:15px;letter-spacing:.5px}
+    .btn,button{text-decoration:none;display:inline-block;text-align:center;padding:10px 18px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;transition:background .2s,border-color .2s;border:1px solid transparent;font-family:inherit}
+    .btn-primary{background:var(--gold);color:#151515;border-color:var(--gold)}
+    .btn-primary:hover{background:var(--gold-2);border-color:var(--gold-2)}
+    .btn-secondary{background:#333;color:var(--text);border-color:#555}
+    .flash{padding:15px;border-radius:12px;margin-bottom:20px;border:1px solid transparent}
+    .flash.success{background-color:rgba(212,175,55,.1);color:var(--gold);border-color:rgba(212,175,55,.3)}
+    .date-picker{margin:20px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .date-picker input[type="date"]{background:#0e0e0e;color:var(--text);padding:8px 12px;border:1px solid rgba(255,255,255,.14);border-radius:12px;font-size:16px;font-family:inherit;color-scheme:dark}
+    .hours-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+    .hour-slot{padding:15px;border-radius:8px;text-align:center;border:1px solid #333}
+    .hour-slot.disponible{background:#272727;cursor:pointer}
+    .hour-slot.disponible:hover{border-color:var(--gold)}
+    .hour-slot.bloqueada{background:#5a3e00;color:#ffca6e;border-color:#896000;cursor:pointer}
+    .hour-slot.ocupada{background:#3a1a20;color:#ffb8c3;border-color:#5c2a34;cursor:not-allowed;opacity:.6}
+    .hour-slot input{display:none}
+    .hour-slot.selected{background:var(--gold);color:#000;border-color:var(--gold-2)}
+    .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+    .muted{color:var(--muted);font-size:13px}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <a href="{{ url_for('panel_cliente', negocio_id=negocio.id) }}" class="btn btn-secondary" style="margin-bottom: 20px;">&larr; Volver a la Agenda</a>
-        <h1>Gestionar Disponibilidad</h1>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}{% for category, message in messages %}
-                <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}{% endif %}
-        {% endwith %}
+  <!-- Datos para JS (evitar Jinja dentro del <script>) -->
+  <div id="js-data"
+       data-gestion-url="{{ url_for('gestion_disponibilidad', negocio_id=negocio.id) }}">
+  </div>
 
-        <div class="date-picker">
-            <label for="fecha">Selecciona una fecha:</label>
-            <input type="date" id="fecha" name="fecha" value="{{ fecha_seleccionada.isoformat() }}"
-                   onchange="window.location.href = `{{ url_for('gestion_disponibilidad', negocio_id=negocio.id) }}?fecha=${this.value}`;">
-        </div>
+  <div class="container">
+    <a href="{{ url_for('panel_cliente', negocio_id=negocio.id) }}" class="btn btn-secondary" style="margin-bottom:20px;">&larr; Volver a la Agenda</a>
+    <h1>Gestionar Disponibilidad</h1>
 
-        <form method="post" action="{{ url_for('gestion_disponibilidad', negocio_id=negocio.id, fecha=fecha_seleccionada.isoformat()) }}">
-            <h2>Horas para el {{ fecha_seleccionada.strftime('%A, %d de %B') }}</h2>
-            {% if estado_horas %}
-                <div class="hours-grid">
-                    {% for item in estado_horas %}
-                        <label class="hour-slot {{ item.status }}" id="slot-{{ item.hora }}">
-                            <strong>{{ item.hora }}</strong>
-                            {% if item.status == 'disponible' or item.status == 'bloqueada' %}
-                                <input type="checkbox" name="horas_bloqueadas" value="{{ item.hora }}" 
-                                       {% if item.status == 'bloqueada' %}checked{% endif %}
-                                       onchange="document.getElementById('slot-{{ item.hora }}').classList.toggle('selected', this.checked)">
-                                <div>{{ 'Desbloquear' if item.status == 'bloqueada' else 'Bloquear' }}</div>
-                            {% else %}
-                                <div>Ocupada</div>
-                            {% endif %}
-                        </label>
-                    {% endfor %}
-                </div>
-                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Guardar Cambios</button>
-            {% else %}
-                <p>Este día está cerrado o no tiene un horario definido.</p>
-            {% endif %}
-        </form>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="date-picker">
+      <label for="fecha">Selecciona una fecha:</label>
+      <input type="date" id="fecha" name="fecha" value="{{ fecha_seleccionada.isoformat() }}"/>
+      <div class="toolbar">
+        <button class="btn btn-secondary" id="btnHoy" type="button" title="Ir a hoy">Hoy</button>
+        <span class="muted">Actualizando cada 15 s…</span>
+      </div>
     </div>
+
+    <form method="post" action="{{ url_for('gestion_disponibilidad', negocio_id=negocio.id, fecha=fecha_seleccionada.isoformat()) }}">
+      <h2>Horas para el {{ fecha_seleccionada.strftime('%A, %d de %B') }}</h2>
+      {% if estado_horas %}
+        <div class="hours-grid" id="gridHoras">
+          {% for item in estado_horas %}
+            <label class="hour-slot {{ item.status }}" id="slot-{{ item.hora }}">
+              <strong>{{ item.hora }}</strong>
+              {% if item.status == 'disponible' or item.status == 'bloqueada' %}
+                <input type="checkbox"
+                       name="horas_bloqueadas"
+                       value="{{ item.hora }}"
+                       {% if item.status == 'bloqueada' %}checked{% endif %}
+                       onchange="document.getElementById('slot-{{ item.hora }}').classList.toggle('selected', this.checked)">
+                <div>{{ 'Desbloquear' if item.status == 'bloqueada' else 'Bloquear' }}</div>
+              {% else %}
+                <div>Ocupada</div>
+              {% endif %}
+            </label>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:20px;">Guardar Cambios</button>
+      {% else %}
+        <p>Este día está cerrado o no tiene un horario definido.</p>
+      {% endif %}
+    </form>
+  </div>
+
+  <script>
+    (function(){
+      var dataNode = document.getElementById('js-data');
+      var gestionBaseUrl = dataNode.getAttribute('data-gestion-url') || '';
+
+      var fechaInput = document.getElementById('fecha');
+      var btnHoy = document.getElementById('btnHoy');
+
+      // Cambiar fecha → navegar (sin mezclar template literals con Jinja)
+      fechaInput.addEventListener('change', function(){
+        var val = this.value;
+        if (val) window.location.href = gestionBaseUrl + '?fecha=' + encodeURIComponent(val);
+      });
+
+      // Botón "Hoy"
+      btnHoy.addEventListener('click', function(){
+        var tzOffset = (new Date()).getTimezoneOffset() * 60000;
+        var hoyISO = (new Date(Date.now() - tzOffset)).toISOString().slice(0,10);
+        window.location.href = gestionBaseUrl + '?fecha=' + hoyISO;
+      });
+
+      // Auto-refresh cada 15 s si la pestaña está visible
+      setInterval(function(){
+        if (document.visibilityState === 'visible') {
+          window.location.reload();
+        }
+      }, 15000);
+
+      // Si viene con hash (#slot-HH:MM) resalta el slot
+      if (location.hash) {
+        var el = document.querySelector(location.hash);
+        if (el) {
+          el.classList.add('selected');
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    })();
+  </script>
 </body>
 </html>

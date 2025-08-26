@@ -1,0 +1,18 @@
+{% extends "base_email.html" %}
+{% block content %}
+<h2>✏️ Tu cita ha sido actualizada</h2>
+<p class="row"><span class="label">Cliente:</span> <span class="val">{{ cliente_nombre }}</span></p>
+{% if servicio_antes and servicio %}
+<p class="row"><span class="label">Servicio:</span> <span class="val">{{ servicio_antes }} → <strong>{{ servicio }}</strong></span></p>
+{% else %}
+<p class="row"><span class="label">Servicio:</span> <span class="val">{{ servicio }}</span></p>
+{% endif %}
+<p class="row"><span class="label">Profesional:</span> <span class="val">{{ empleado_nombre }}</span></p>
+<p class="row"><span class="label">Nueva fecha:</span> <span class="val">{{ fecha_legible }} a las {{ hora }}</span></p>
+{% if direccion %}
+<p class="row"><span class="label">Dónde:</span> <span class="val">{{ direccion }}</span></p>
+{% endif %}
+<p style="margin-top:16px">
+  <a class="btn" href="{{ google_calendar_url }}">Actualizar en Google Calendar</a>
+</p>
+{% endblock %}

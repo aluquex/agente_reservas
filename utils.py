@@ -2,9 +2,19 @@
 import unicodedata
 from datetime import datetime
 from difflib import get_close_matches
-# Ya no necesitamos el módulo locale, lo quitamos para evitar confusiones.
+import locale
+import re # Importamos la librería de expresiones regulares
+
+try:
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_TIME, 'esp')
+    except locale.Error:
+        print("Advertencia: No se pudo establecer el locale en español.")
 
 def normalizar_texto(texto):
+    # Transforma "Miércoles" en "miercoles"
     texto = texto.lower()
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -25,12 +35,7 @@ def encontrar_servicio_mas_cercano(texto, lista_servicios):
 def now_spain():
     return datetime.now()
 
-# --- LA SOLUCIÓN A PRUEBA DE BALAS ---
 def formato_nombre_dia_es(fecha_obj):
-    """
-    Devuelve el nombre del día de la semana en español, con tildes,
-    sin depender de la configuración 'locale' del sistema.
-    """
     dias_es = {
         0: "Lunes",
         1: "Martes",
@@ -40,10 +45,14 @@ def formato_nombre_dia_es(fecha_obj):
         5: "Sábado",
         6: "Domingo"
     }
-    # .weekday() devuelve un número de 0 (lunes) a 6 (domingo)
     return dias_es.get(fecha_obj.weekday(), "")
 
 def ha_pasado_fecha_hora(fecha, hora):
     ahora = datetime.now()
     fecha_hora_cita = datetime.combine(fecha, hora)
     return ahora > fecha_hora_cita
+
+def validar_email(email):
+    """Comprueba si un texto tiene el formato básico de un email."""
+    regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    return re.match(regex, email) is not None

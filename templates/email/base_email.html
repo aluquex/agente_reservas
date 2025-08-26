@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ negocio_nombre }} — Notificación</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Indica compatibilidad de temas (algunos clientes lo respetan) -->
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+</head>
+<body style="margin:0;background:#111111;color:#EEEEEE;">
+  <div class="wrap" style="max-width:560px;margin:0 auto;padding:24px;">
+    <div class="card" style="background:#181818;border:1px solid #2a2a2a;border-radius:14px;overflow:hidden;">
+      <div class="header" style="padding:18px 20px;background:#101010;border-bottom:1px solid #2a2a2a;text-align:center;">
+        {% if logo_cid %}
+          <img class="logo" src="cid:logo_cid" alt="{{ negocio_nombre }}" style="max-width:160px;max-height:64px;display:block;margin:0 auto;" />
+        {% else %}
+          <h1 class="title" style="margin:0;color:#F2D17B;font-size:18px;letter-spacing:.3px;">{{ negocio_nombre }}</h1>
+        {% endif %}
+      </div>
+      <div class="content" style="padding:20px;">
+        {% block content %}{% endblock %}
+        <p class="muted" style="color:#BFBFBF;font-size:12px;margin:16px 0 0 0;">Si tienes cualquier duda, responde a este correo.</p>
+      </div>
+      <div class="footer" style="padding:14px 20px;border-top:1px solid #2a2a2a;color:#AAAAAA;font-size:12px;background:#181818;">
+        Enviado por {{ negocio_nombre }} — sistema de reservas.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

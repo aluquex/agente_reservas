@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>💈 Asistente Virtual — Peluquería Sialweb</title>
-  <!-- --- CAMBIO DE FUENTE --- -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,7 +14,6 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    /* --- CAMBIO DE FUENTE --- */
     body{ margin:0;background:var(--bg);color:var(--text);font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;display:flex;align-items:center;justify-content:center;padding:24px; font-size: 16px; }
     #chat-wrap{ width:min(780px, 92vw);background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06) inset;overflow:hidden; }
     #chat-head{ padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));font-weight:600; letter-spacing:.2px;color:var(--gold); }
@@ -53,6 +51,7 @@
     let isFirstMessage = true;
     const urlParams = new URLSearchParams(window.location.search);
     const businessSlug = urlParams.get('business');
+
     function agregarMensaje(texto, tipo) {
       const div = document.createElement("div");
       div.className = `msg ${tipo}`;
@@ -60,22 +59,52 @@
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
+
+    // --- FUNCIÓN DE DIBUJO CORREGIDA Y COMPLETA ---
     function dibujarComponente(componente) {
         const container = document.createElement("div");
         container.className = "component-container";
         let selectorDiv;
+        
         if (componente.type === 'day_selector') {
-            selectorDiv = document.createElement("div"); selectorDiv.className = "day-selector";
-            componente.days.forEach(item => { const button = document.createElement("button"); button.className = "day-button"; button.textContent = item.display; button.addEventListener("click", () => enviarMensaje(item.value)); selectorDiv.appendChild(button); });
+            selectorDiv = document.createElement("div"); 
+            selectorDiv.className = "day-selector";
+            componente.days.forEach(item => { 
+                const button = document.createElement("button"); 
+                button.className = "day-button"; 
+                button.textContent = item.display; 
+                button.addEventListener("click", () => enviarMensaje(item.value)); 
+                selectorDiv.appendChild(button); 
+            });
         } else if (componente.type === 'hour_selector') {
-            selectorDiv = document.createElement("div"); selectorDiv.className = "hour-selector";
-            componente.hours.forEach(item => { const button = document.createElement("button"); button.className = "hour-button"; button.textContent = item; button.addEventListener("click", () => enviarMensaje(item)); selectorDiv.appendChild(button); });
+            selectorDiv = document.createElement("div"); 
+            selectorDiv.className = "hour-selector";
+            componente.hours.forEach(item => { 
+                const button = document.createElement("button"); 
+                button.className = "hour-button"; 
+                button.textContent = item; 
+                button.addEventListener("click", () => enviarMensaje(item)); 
+                selectorDiv.appendChild(button); 
+            });
         } else if (componente.type === 'choice_buttons') {
-            selectorDiv = document.createElement("div"); selectorDiv.className = "choice-selector";
-            componente.choices.forEach(item => { const button = document.createElement("button"); button.className = "choice-button"; button.textContent = item; button.addEventListener("click", () => enviarMensaje(item)); selectorDiv.appendChild(button); });
+            selectorDiv = document.createElement("div"); 
+            selectorDiv.className = "choice-selector";
+            componente.choices.forEach(item => { 
+                const button = document.createElement("button"); 
+                button.className = "choice-button"; 
+                button.textContent = item; 
+                button.addEventListener("click", () => enviarMensaje(item)); 
+                selectorDiv.appendChild(button); 
+            });
         }
-        if (selectorDiv) { container.appendChild(selectorDiv); chat.appendChild(container); chat.scrollTop = chat.scrollHeight; }
+        
+        if (selectorDiv) { 
+            container.appendChild(selectorDiv); 
+            chat.appendChild(container); 
+            chat.scrollTop = chat.scrollHeight; 
+        }
     }
+
     async function enviarMensaje(textoUsuario) {
       document.getElementById('input-area').style.display = 'none';
       if (textoUsuario) {
@@ -108,21 +137,29 @@
         }
         isFirstMessage = false;
       } catch (error) {
-        agregarMensaje("❌ Error de conexión.", "bot");
+        console.error("Error en fetch:", error);
+        agregarMensaje("❌ Error de conexión con el servidor. Por favor, inténtalo más tarde.", "bot");
       } finally {
         document.getElementById('input-area').style.display = 'flex';
         input.focus();
       }
     }
+    
     function manejarEnvio() {
         const texto = input.value.trim();
-        const hayBotones = chat.querySelector('button');
-        if (texto || !hayBotones) { enviarMensaje(texto); input.value = ""; input.focus(); }
+        const hayBotones = chat.querySelector('.choice-button, .day-button, .hour-button');
+        if (texto || !hayBotones) { 
+            enviarMensaje(texto); 
+            input.value = ""; 
+            input.focus(); 
+        }
     }
+
     btnEnviar.addEventListener("click", manejarEnvio);
     input.addEventListener("keypress", (e) => {
       if (e.key === "Enter") { e.preventDefault(); manejarEnvio(); }
     });
+
     window.addEventListener("DOMContentLoaded", () => enviarMensaje(""));
   </script>
 </body>

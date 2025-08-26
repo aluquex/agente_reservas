@@ -1,0 +1,14 @@
+{% extends "base_email.html" %}
+{% block content %}
+<h2>✅ Confirmación de tu cita</h2>
+<p class="row"><span class="label">Cliente:</span> <span class="val">{{ cliente_nombre }}</span></p>
+<p class="row"><span class="label">Servicio:</span> <span class="val">{{ servicio }}</span></p>
+<p class="row"><span class="label">Profesional:</span> <span class="val">{{ empleado_nombre }}</span></p>
+<p class="row"><span class="label">Cuándo:</span> <span class="val">{{ fecha_legible }} a las {{ hora }}</span></p>
+{% if direccion %}
+<p class="row"><span class="label">Dónde:</span> <span class="val">{{ direccion }}</span></p>
+{% endif %}
+<p style="margin-top:16px">
+  <a class="btn" href="{{ google_calendar_url }}">Añadir a Google Calendar</a>
+</p>
+{% endblock %}
