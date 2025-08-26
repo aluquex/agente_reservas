@@ -44,7 +44,12 @@
   </div>
 
   <script>
-    const API_URL_BASE = "http://127.0.0.1:5001/mensaje";
+    // 🔧 Endpoint backend: local vs producción
+    const API_URL_BASE =
+      (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+        ? 'http://127.0.0.1:5001/mensaje'
+        : '/mensaje';
+
     const chat = document.getElementById("chat");
     const input = document.getElementById("inputTexto");
     const btnEnviar = document.getElementById("btnEnviar");
@@ -62,47 +67,47 @@
 
     // --- FUNCIÓN DE DIBUJO CORREGIDA Y COMPLETA ---
     function dibujarComponente(componente) {
-        const container = document.createElement("div");
-        container.className = "component-container";
-        let selectorDiv;
-        
-        if (componente.type === 'day_selector') {
-            selectorDiv = document.createElement("div"); 
-            selectorDiv.className = "day-selector";
-            componente.days.forEach(item => { 
-                const button = document.createElement("button"); 
-                button.className = "day-button"; 
-                button.textContent = item.display; 
-                button.addEventListener("click", () => enviarMensaje(item.value)); 
-                selectorDiv.appendChild(button); 
-            });
-        } else if (componente.type === 'hour_selector') {
-            selectorDiv = document.createElement("div"); 
-            selectorDiv.className = "hour-selector";
-            componente.hours.forEach(item => { 
-                const button = document.createElement("button"); 
-                button.className = "hour-button"; 
-                button.textContent = item; 
-                button.addEventListener("click", () => enviarMensaje(item)); 
-                selectorDiv.appendChild(button); 
-            });
-        } else if (componente.type === 'choice_buttons') {
-            selectorDiv = document.createElement("div"); 
-            selectorDiv.className = "choice-selector";
-            componente.choices.forEach(item => { 
-                const button = document.createElement("button"); 
-                button.className = "choice-button"; 
-                button.textContent = item; 
-                button.addEventListener("click", () => enviarMensaje(item)); 
-                selectorDiv.appendChild(button); 
-            });
-        }
-        
-        if (selectorDiv) { 
-            container.appendChild(selectorDiv); 
-            chat.appendChild(container); 
-            chat.scrollTop = chat.scrollHeight; 
-        }
+      const container = document.createElement("div");
+      container.className = "component-container";
+      let selectorDiv;
+
+      if (componente.type === 'day_selector') {
+        selectorDiv = document.createElement("div");
+        selectorDiv.className = "day-selector";
+        componente.days.forEach(item => {
+          const button = document.createElement("button");
+          button.className = "day-button";
+          button.textContent = item.display;
+          button.addEventListener("click", () => enviarMensaje(item.value));
+          selectorDiv.appendChild(button);
+        });
+      } else if (componente.type === 'hour_selector') {
+        selectorDiv = document.createElement("div");
+        selectorDiv.className = "hour-selector";
+        componente.hours.forEach(item => {
+          const button = document.createElement("button");
+          button.className = "hour-button";
+          button.textContent = item;
+          button.addEventListener("click", () => enviarMensaje(item));
+          selectorDiv.appendChild(button);
+        });
+      } else if (componente.type === 'choice_buttons') {
+        selectorDiv = document.createElement("div");
+        selectorDiv.className = "choice-selector";
+        componente.choices.forEach(item => {
+          const button = document.createElement("button");
+          button.className = "choice-button";
+          button.textContent = item;
+          button.addEventListener("click", () => enviarMensaje(item));
+          selectorDiv.appendChild(button);
+        });
+      }
+
+      if (selectorDiv) {
+        container.appendChild(selectorDiv);
+        chat.appendChild(container);
+        chat.scrollTop = chat.scrollHeight;
+      }
     }
 
     async function enviarMensaje(textoUsuario) {
@@ -127,12 +132,11 @@
           agregarMensaje(datos.respuesta, "bot");
         }
         if (datos && datos.post_respuesta) {
-            agregarMensaje(datos.post_respuesta.respuesta, "bot");
-            if (datos.post_respuesta.ui_component) {
-                dibujarComponente(datos.post_respuesta.ui_component);
-            }
-        } 
-        else if (datos && datos.ui_component) {
+          agregarMensaje(datos.post_respuesta.respuesta, "bot");
+          if (datos.post_respuesta.ui_component) {
+            dibujarComponente(datos.post_respuesta.ui_component);
+          }
+        } else if (datos && datos.ui_component) {
           dibujarComponente(datos.ui_component);
         }
         isFirstMessage = false;
@@ -144,15 +148,15 @@
         input.focus();
       }
     }
-    
+
     function manejarEnvio() {
-        const texto = input.value.trim();
-        const hayBotones = chat.querySelector('.choice-button, .day-button, .hour-button');
-        if (texto || !hayBotones) { 
-            enviarMensaje(texto); 
-            input.value = ""; 
-            input.focus(); 
-        }
+      const texto = input.value.trim();
+      const hayBotones = chat.querySelector('.choice-button, .day-button, .hour-button');
+      if (texto || !hayBotones) {
+        enviarMensaje(texto);
+        input.value = "";
+        input.focus();
+      }
     }
 
     btnEnviar.addEventListener("click", manejarEnvio);
